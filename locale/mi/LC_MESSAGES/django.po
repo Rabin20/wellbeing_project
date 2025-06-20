@@ -1,0 +1,196 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-06-18 17:09+0545\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: .\wellbeing_app\models.py:8
+msgid "😊 Happy/Pai"
+msgstr ""
+
+#: .\wellbeing_app\models.py:9
+msgid "😌 Calm/Noho pai"
+msgstr ""
+
+#: .\wellbeing_app\models.py:10
+msgid "😐 Neutral/Haupapa"
+msgstr ""
+
+#: .\wellbeing_app\models.py:11
+msgid "😟 Anxious/Māharahara"
+msgstr ""
+
+#: .\wellbeing_app\models.py:12
+msgid "😠 Angry/Riri"
+msgstr ""
+
+#: .\wellbeing_app\models.py:13
+msgid "😢 Sad/Pōuri"
+msgstr ""
+
+#: .\wellbeing_app\models.py:16 .\wellbeing_app\models.py:59
+msgid "user"
+msgstr ""
+
+#: .\wellbeing_app\models.py:17 .\wellbeing_app\models.py:61
+msgid "mood"
+msgstr ""
+
+#: .\wellbeing_app\models.py:18
+msgid "notes"
+msgstr ""
+
+#: .\wellbeing_app\models.py:19 .\wellbeing_app\models.py:60
+msgid "date"
+msgstr ""
+
+#: .\wellbeing_app\models.py:22
+msgid "Mood Entry"
+msgstr ""
+
+#: .\wellbeing_app\models.py:23
+msgid "Mood Entries"
+msgstr ""
+
+#: .\wellbeing_app\models.py:31 .\wellbeing_project\settings.py:101
+msgid "English"
+msgstr ""
+
+#: .\wellbeing_app\models.py:32 .\wellbeing_project\settings.py:100
+msgid "Māori"
+msgstr ""
+
+#: .\wellbeing_app\models.py:36
+msgid "Self-Esteem"
+msgstr ""
+
+#: .\wellbeing_app\models.py:37
+msgid "Strength"
+msgstr ""
+
+#: .\wellbeing_app\models.py:38
+msgid "Cultural Identity"
+msgstr ""
+
+
+#: .\wellbeing_app\models.py:42
+msgid "affirmation text"
+msgstr ""
+
+#: .\wellbeing_app\models.py:43
+msgid "language"
+msgstr ""
+
+#: .\wellbeing_app\models.py:44
+msgid "category"
+msgstr ""
+
+#: .\wellbeing_app\models.py:45
+msgid "created at"
+msgstr ""
+
+#: .\wellbeing_app\models.py:46
+msgid "active"
+msgstr ""
+
+#: .\wellbeing_app\models.py:49
+msgid "Affirmation"
+msgstr ""
+
+#: .\wellbeing_app\models.py:50
+msgid "Affirmations"
+msgstr ""
+
+#: .\wellbeing_app\models.py:62
+msgid "title"
+msgstr ""
+
+#: .\wellbeing_app\models.py:63
+msgid "content"
+msgstr ""
+
+#: .\wellbeing_app\models.py:67
+msgid "tags"
+msgstr ""
+
+#: .\wellbeing_app\models.py:68
+msgid "Comma-separated tags like 'whānau,stress,school'"
+msgstr ""
+
+#: .\wellbeing_app\models.py:72
+msgid "private entry"
+msgstr ""
+
+#: .\wellbeing_app\models.py:73
+msgid "Keep this entry visible only to you"
+msgstr ""
+
+#: .\wellbeing_app\models.py:77
+msgid "Journal Entry"
+msgstr ""
+
+#: .\wellbeing_app\models.py:78
+msgid "Journal Entries"
+msgstr ""
+
+#: .\wellbeing_app\models.py:81
+msgid "Can view community journal entries"
+msgstr ""
+
+msgid "Wellbeing App"
+msgstr "Taupānga Hauora"
+
+msgid "Home"
+msgstr "Kāinga"
+
+msgid "Welcome"
+msgstr "Nau mai"
+
+msgid "Login"
+msgstr "Takiuru"
+
+msgid "Logout"
+msgstr "Takiputa"
+
+msgid "Mood Tracker"
+msgstr "Pūrongo āhua"
+
+msgid "Journal"
+msgstr "Pukapuka"
+
+msgid "Community"
+msgstr "Hapori"
+
+msgid "Wellbeing"
+msgstr "Hauora"
+
+msgid "Happy/Pai"
+msgstr "Pai"
+
+msgid "Calm/Noho pai"
+msgstr "Noho pai"
+
+msgid "Neutral/Haupapa"
+msgstr "Haupapa"
+
+msgid "Anxious/Māharahara"
+msgstr "Māharahara"
+
+msgid "Angry/Riri"
+msgstr "Riri"
+
+msgid "Sad/Pōuri"
+msgstr "Pōuri"
