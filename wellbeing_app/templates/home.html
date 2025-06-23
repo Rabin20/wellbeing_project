@@ -1,41 +1,40 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static i18n %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-8 mx-auto text-center">
-            <h1 class="display-4 mb-4">Supporting Mental Health</h1>
-            <h2 class="mb-4">For Māori and Multicultural Youth</h2>
+            <h1 class="display-4 mb-4">{% trans "Supporting Mental Health" %}</h1>
+            <h2 class="mb-4">{% trans "For Māori and Multicultural Youth" %}</h2>
             
             <div class="card shadow-lg mt-5">
                 <div class="card-body">
                     <p class="lead">
-                        Our community platform provides culturally-sensitive mental health resources 
-                        and support for Māori and multicultural youth.
+                        {% trans "Our community platform provides culturally-sensitive mental health resources and support for Māori and multicultural youth." %}
                     </p>
                     
                     <!-- Māori welcome -->
                     <div class="mt-4 p-3 bg-light rounded">
-                        <h3>Nau mai, haere mai</h3>
-                        <p>He waka eke noa - We're all in this together</p>
+                        <h3>{% trans "Nau mai, haere mai" %}</h3>
+                        <p>{% trans "He waka eke noa - We're all in this together" %}</p>
                     </div>
                     
                     <!-- Quick Actions -->
                     <div class="row mt-4">
                         <div class="col-md-4 mb-3">
                             <a href="{% url 'mood_tracker' %}" class="btn btn-primary btn-block">
-                                Track Your Mood
+                                {% trans "Track Your Mood" %}
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
                             <a href="#" class="btn btn-info btn-block">
-                                Community Resources
+                                {% trans "Community Resources" %}
                             </a>
                         </div>
                         <div class="col-md-4 mb-3">
                             <a href="#" class="btn btn-success btn-block">
-                                Helpline Access
+                                {% trans "Helpline Access" %}
                             </a>
                         </div>
                     </div>
