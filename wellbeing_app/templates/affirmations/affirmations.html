@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">{% trans "Daily Affirmations" %}</h1>
+    
+    <div class="row">
+        {% for affirmation in affirmations %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <p class="card-text display-6">{{ affirmation }}</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <button class="btn btn-outline-primary w-100">
+                        {% trans "Save to favorites" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="text-center mt-4">
+        <button class="btn btn-primary btn-lg">
+            {% trans "Generate New Affirmations" %}
+        </button>
+    </div>
+</div>
+{% endblock %}
