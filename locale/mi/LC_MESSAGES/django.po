@@ -194,3 +194,24 @@ msgstr "Riri"
 
 msgid "Sad/Pōuri"
 msgstr "Pōuri"
+
+msgid "Supporting Mental Health"
+msgstr "Te tautoko i te hauora hinengaro"
+
+msgid "For Māori and Multicultural Youth"
+msgstr "Mō te hunga rangatahi Māori me te maha ahurea"
+
+msgid "Our community platform provides culturally-sensitive mental health resources and support for Māori and multicultural youth."
+msgstr "Ka whakarato tā mātou papaaho hapori i ngā rauemi hauora hinengaro e aro ana ki ngā ahurea me te tautoko mō te hunga rangatahi Māori me te maha ahurea."
+
+msgid "Nau mai, haere mai"
+msgstr "Nau mai, haere mai"
+
+msgid "He waka eke noa - We're all in this together"
+msgstr "He waka eke noa - Kei te mahi ngātahi tātou katoa"
+
+msgid "Track Your Mood"
+msgstr "Aroturuki i tō āhua"
+
+msgid "Save Mood"
+msgstr "Tiaki i te āhua"
