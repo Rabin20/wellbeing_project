@@ -10,6 +10,7 @@
     <title>{% trans "Wellbeing App" %} - {% block title %}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/language.css' %}">
     <style>
         .navbar-brand {
             font-weight: bold;
@@ -17,20 +18,30 @@
         .maori-nav-item {
             font-style: italic;
         }
-        .language-switcher {
-            margin-left: 15px;
+        .translation-loading {
+            opacity: 0.7;
+            position: relative;
         }
-        .language-switcher select {
-            padding: 5px;
-            border-radius: 4px;
-            background-color: #f8f9fa;
+        .translation-loading::after {
+            content: " ";
+            display: inline-block;
+            width: 1em;
+            height: 1em;
+            border: 2px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #0d6efd;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 0.5em;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand" href="{% url 'home' %}" data-translate="Wellbeing App">
                 {% trans "Wellbeing App" %}
             </a>
             
@@ -41,40 +52,36 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">{% trans "Home" %}</a>
+                        <a class="nav-link" href="{% url 'home' %}" data-translate="Home">{% trans "Home" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'mood_tracker' %}">{% trans "Mood Tracker" %}</a>
+                        <a class="nav-link" href="{% url 'mood_tracker' %}" data-translate="Mood Tracker">{% trans "Mood Tracker" %}</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'journal_list' %}">
-                            <i class="bi bi-journal-text"></i> {% trans "Journal" %}
+                            <i class="bi bi-journal-text"></i> <span data-translate="Journal">{% trans "Journal" %}</span>
                         </a>
                     </li>
                     <li class="nav-item maori-nav-item">
-                        <a class="nav-link" href="#">{% trans "Whānau Support" %}</a>
+                        <a class="nav-link" href="#" data-translate="Whānau Support">{% trans "Whānau Support" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">{% trans "Resources" %}</a>
+                        <a class="nav-link" href="#" data-translate="Resources">{% trans "Resources" %}</a>
                     </li>
                 </ul>
                 
                 <div class="d-flex align-items-center">
-                    <form action="{% url 'set_language' %}" method="post" class="language-switcher">
-                        {% csrf_token %}
-                        <input name="next" type="hidden" value="{{ request.get_full_path }}">
-                        <select name="language" onchange="this.form.submit()" class="form-select form-select-sm">
-                            <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
-                            <option value="mi" {% if LANGUAGE_CODE == 'mi' %}selected{% endif %}>Māori</option>
-                        </select>
-                    </form>
+                    <div class="language-switcher">
+                        <button class="btn-lang {% if LANGUAGE_CODE == 'en' %}active{% endif %}" data-lang="en">English</button>
+                        <button class="btn-lang {% if LANGUAGE_CODE == 'mi' %}active{% endif %}" data-lang="mi">Māori</button>
+                    </div>
                     {% if user.is_authenticated %}
                     <form method="post" action="{% url 'logout' %}" class="ms-2">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-light">{% trans "Logout" %}</button>
+                        <button type="submit" class="btn btn-outline-light" data-translate="Logout">{% trans "Logout" %}</button>
                     </form>
                     {% else %}
-                    <a href="{% url 'login' %}" class="btn btn-outline-light ms-2">{% trans "Login" %}</a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-light ms-2" data-translate="Login">{% trans "Login" %}</a>
                     {% endif %}
                 </div>
             </div>
@@ -87,11 +94,34 @@
 
     <footer class="bg-dark text-white py-4 mt-5">
         <div class="container text-center">
-            <p>© {% now "Y" %} {% trans "Community Wellbeing App - Supporting Māori and Multicultural Youth" %}</p>
-            <p>{% trans "He waka eke noa - We're all in this together" %}</p>
+            <p data-translate="Community Wellbeing App - Supporting Māori and Multicultural Youth">
+                © {% now "Y" %} {% trans "Community Wellbeing App - Supporting Māori and Multicultural Youth" %}
+            </p>
+            <p data-translate="He waka eke noa - We're all in this together">
+                {% trans "He waka eke noa - We're all in this together" %}
+            </p>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{% static 'js/languageSwitcher.js' %}"></script>
+    <script>
+        // Initialize translation loading state
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add data-translate attributes to elements that need translation
+            const translateElements = document.querySelectorAll('[data-translate]');
+            translateElements.forEach(el => {
+                if (!el.dataset.translate) {
+                    el.dataset.translate = el.textContent.trim();
+                }
+            });
+            
+            // Check if we need to load translations immediately
+            if (document.cookie.includes('django_language=mi')) {
+                document.querySelector('.btn-lang[data-lang="mi"]').classList.add('active');
+            }
+        });
+    </script>
 </body>
 </html>
