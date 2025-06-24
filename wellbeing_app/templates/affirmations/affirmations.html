@@ -3,7 +3,28 @@
 
 {% block content %}
 <div class="container mt-5">
+    <!-- Debug Info (remove after testing) -->
+<!-- Replace the debug section in your template with this: -->
+<div class="alert alert-info mb-4">
+    <h4>Debug Info</h4>
+    <p>Language: {{ request.LANGUAGE_CODE }}</p>
+    <p>Total Affirmations: {{ affirmations|length }}</p>
+    <p>User Affirmations: {{ user_affirmations|length }}</p>
+    <p>Favorites: {{ favorites|length }}</p>
+    <h5 class="mt-3">Affirmation Samples:</h5>
+    <ul>
+        {% for aff in affirmations|slice:":3" %}
+        <li>{{ aff.text }} (ID: {{ aff.id }})</li>
+        {% empty %}
+        <li>No affirmations in template context</li>
+        {% endfor %}
+    </ul>
+</div>
+
     <h1 class="mb-4">{% trans "Daily Affirmations" %}</h1>
+    
+    <!-- Toast Container -->
+    <div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11"></div>
     
     <!-- Tab Navigation -->
     <ul class="nav nav-tabs mb-4" id="affirmationTabs" role="tablist">
@@ -42,13 +63,14 @@
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <p class="card-text display-6">{{ affirmation.text }}</p>
+                            <small class="text-muted">{{ affirmation.get_category_display }}</small>
                         </div>
                         <div class="card-footer bg-transparent">
-                            <button class="btn btn-outline-primary w-100 save-btn" 
+                            <button class="btn {% if affirmation.id in favorites %}btn-primary{% else %}btn-outline-primary{% endif %} w-100 save-btn" 
                                     data-affirmation-id="{{ affirmation.id }}"
                                     data-is-favorite="{% if affirmation.id in favorites %}true{% else %}false{% endif %}">
                                 {% if affirmation.id in favorites %}
-                                <i class="bi bi-heart-fill"></i> {% trans "Saved" %}
+                                <i class="bi bi-heart-fill"></i> {% trans "Remove from favorites" %}
                                 {% else %}
                                 <i class="bi bi-heart"></i> {% trans "Save to favorites" %}
                                 {% endif %}
@@ -58,17 +80,11 @@
                 </div>
                 {% empty %}
                 <div class="col-12">
-                    <div class="alert alert-info">
-                        {% trans "No affirmations available. Add your first one!" %}
+                    <div class="alert alert-warning">
+                        {% trans "No affirmations available in your selected language." %}
                     </div>
                 </div>
                 {% endfor %}
-            </div>
-            
-            <div class="text-center mt-4">
-                <a href="{% url 'affirmations' %}" class="btn btn-primary btn-lg">
-                    {% trans "Generate New Affirmations" %}
-                </a>
             </div>
         </div>
         
@@ -83,11 +99,11 @@
                             <span class="badge bg-info">{% trans "Your Affirmation" %}</span>
                         </div>
                         <div class="card-footer bg-transparent">
-                            <button class="btn btn-outline-primary w-100 save-btn" 
+                            <button class="btn {% if affirmation.id in favorites %}btn-primary{% else %}btn-outline-primary{% endif %} w-100 save-btn" 
                                     data-affirmation-id="{{ affirmation.id }}"
                                     data-is-favorite="{% if affirmation.id in favorites %}true{% else %}false{% endif %}">
                                 {% if affirmation.id in favorites %}
-                                <i class="bi bi-heart-fill"></i> {% trans "Saved" %}
+                                <i class="bi bi-heart-fill"></i> {% trans "Remove from favorites" %}
                                 {% else %}
                                 <i class="bi bi-heart"></i> {% trans "Save to favorites" %}
                                 {% endif %}
@@ -112,14 +128,14 @@
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
                         <div class="card-body text-center">
-                            <p class="card-text display-6">{{ fav.affirmation.text }}</p>
-                            {% if fav.affirmation.created_by == request.user %}
+                            <p class="card-text display-6">{{ fav.text }}</p>
+                            {% if fav.created_by == request.user %}
                             <span class="badge bg-info">{% trans "Your Affirmation" %}</span>
                             {% endif %}
                         </div>
                         <div class="card-footer bg-transparent">
-                            <button class="btn btn-outline-danger w-100 save-btn" 
-                                    data-affirmation-id="{{ fav.affirmation.id }}"
+                            <button class="btn btn-primary w-100 save-btn" 
+                                    data-affirmation-id="{{ fav.id }}"
                                     data-is-favorite="true">
                                 <i class="bi bi-heart-fill"></i> {% trans "Remove from favorites" %}
                             </button>
@@ -161,65 +177,116 @@
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // Handle favorite button clicks
-    $('.save-btn').click(function() {
+    // Use event delegation for dynamically loaded buttons
+    $(document).on('click', '.save-btn', function(e) {
+        e.preventDefault();
         const btn = $(this);
         const affirmationId = btn.data('affirmation-id');
-        const isFavorite = btn.data('is-favorite') === 'true';
         
         $.ajax({
             url: '{% url "save_affirmation" %}',
             method: 'POST',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': '{{ csrf_token }}'
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             data: {
                 'affirmation_id': affirmationId
             },
             success: function(data) {
                 if (data.status === 'added') {
-                    btn.html('<i class="bi bi-heart-fill"></i> {% trans "Saved" %}');
+                    // Update button to show it's now favorited
+                    btn.removeClass('btn-outline-primary').addClass('btn-primary');
+                    btn.html('<i class="bi bi-heart-fill"></i> {% trans "Remove from favorites" %}');
                     btn.data('is-favorite', 'true');
-                    if (btn.hasClass('btn-outline-danger')) {
-                        btn.removeClass('btn-outline-danger').addClass('btn-outline-primary');
+                    
+                    // Show success message
+                    showToast('{% trans "Affirmation added to favorites!" %}', 'success');
+                    
+                    // If on favorites tab, reload content
+                    if ($('#favorites-tab').hasClass('active')) {
+                        loadFavoritesTab();
                     }
                 } else if (data.status === 'removed') {
+                    // Update button to show it's not favorited
+                    btn.removeClass('btn-primary').addClass('btn-outline-primary');
                     btn.html('<i class="bi bi-heart"></i> {% trans "Save to favorites" %}');
                     btn.data('is-favorite', 'false');
+                    
+                    // Show info message
+                    showToast('{% trans "Affirmation removed from favorites" %}', 'info');
+                    
                     // If on favorites tab, remove the card
                     if ($('#favorites-tab').hasClass('active')) {
                         btn.closest('.col-md-6').fadeOut(300, function() {
                             $(this).remove();
-                            // Show empty message if no favorites left
-                            if ($('#favorites-content .col-md-6').length === 0) {
-                                $('#favorites-content').append(
-                                    '<div class="col-12"><div class="alert alert-info">{% trans "You don\'t have any favorite affirmations yet." %}</div></div>'
-                                );
-                            }
+                            checkEmptyFavorites();
                         });
                     }
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
+                showToast('{% trans "Failed to update favorites. Please try again." %}', 'danger');
             }
         });
     });
-    
-    // Refresh favorites tab when clicked
-    $('#favorites-tab').click(function() {
+
+    // Function to load favorites tab content
+    function loadFavoritesTab() {
         $.ajax({
             url: '{% url "favorite_affirmations" %}',
             method: 'GET',
             success: function(data) {
                 $('#favorites-content').html($(data).find('#favorites-content').html());
+                checkEmptyFavorites();
+            },
+            error: function() {
+                showToast('{% trans "Failed to load favorites. Please refresh the page." %}', 'danger');
             }
         });
+    }
+
+    // Function to check if favorites tab is empty
+    function checkEmptyFavorites() {
+        if ($('#favorites-content .col-md-6').length === 0) {
+            $('#favorites-content').html(
+                '<div class="col-12"><div class="alert alert-info">{% trans "You don\'t have any favorite affirmations yet." %}</div></div>'
+            );
+        }
+    }
+
+    // Toast notification function
+    function showToast(message, type) {
+        const toast = $(`<div class="toast align-items-center text-white bg-${type} border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>`);
+        
+        $('#toast-container').append(toast);
+        const bsToast = new bootstrap.Toast(toast[0]);
+        bsToast.show();
+        
+        toast.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+
+    // Load favorites tab when clicked
+    $('#favorites-tab').click(function() {
+        loadFavoritesTab();
     });
+
+    // Initialize favorites tab if it's active on page load
+    if ($('#favorites-tab').hasClass('active')) {
+        loadFavoritesTab();
+    }
 });
 </script>
 {% endblock %}

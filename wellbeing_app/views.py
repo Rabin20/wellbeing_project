@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 def home(request):
     activate(get_language())
@@ -151,95 +152,90 @@ def journal_add(request):
     return render(request, 'journal/add.html', context)
 
 # Affirmations Views
-class DailyAffirmationsView(TemplateView):
+class DailyAffirmationsView(LoginRequiredMixin, TemplateView):
     template_name = 'affirmations/affirmations.html'
-    
+    login_url = '/login/'
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = AffirmationForm()
-        current_language = self.request.LANGUAGE_CODE
+        current_language = self.request.LANGUAGE_CODE or 'en'
+        print(f"\n=== DEBUG: Current language: {current_language} ===")  # Console debug
         
-        # Get all affirmations (user's and system defaults)
-        user_affirmations = Affirmation.objects.filter(
-            Q(created_by=self.request.user) | Q(created_by__isnull=True),
+        # Get affirmations
+        base_query = Q(active=True) & Q(language=current_language)
+        all_affirmations = Affirmation.objects.filter(
+            base_query & (Q(created_by=self.request.user) | Q(created_by__isnull=True))
+        ).distinct()
+
+        print(f"DB Query: {all_affirmations.query}")  # Show the actual SQL query
+        print(f"Found {all_affirmations.count()} affirmations in DB")  # Count in DB
+
+        # Create defaults if no affirmations exist
+        if not all_affirmations.exists():
+            print("Creating default affirmations...")
+            all_affirmations = self.create_default_affirmations(current_language)
+        
+        if not all_affirmations.exists():
+            print("Creating default affirmations...")
+            all_affirmations = self.create_default_affirmations(current_language)
+        
+        # Get user's personal affirmations
+        context['user_affirmations'] = Affirmation.objects.filter(
+            created_by=self.request.user,
             active=True,
             language=current_language
         )
         
-        # Get user's personal affirmations for the "Your Affirmations" tab
-        if self.request.user.is_authenticated:
-            context['user_affirmations'] = Affirmation.objects.filter(
-                created_by=self.request.user,
-                active=True,
-                language=current_language
-            )
-        else:
-            context['user_affirmations'] = Affirmation.objects.none()
-        
-        # Create defaults if none exist
-        if not user_affirmations.exists():
-            user_affirmations = self.create_default_affirmations(current_language)
-        
-        # Select random affirmations (6 or fewer)
-        context['affirmations'] = random.sample(
-            list(user_affirmations), 
-            min(6, user_affirmations.count())
+        # Get favorites
+        favorites = FavoriteAffirmation.objects.filter(user=self.request.user)
+        context['favorites'] = set(favorites.values_list('affirmation_id', flat=True))
+        context['favorite_affirmations'] = Affirmation.objects.filter(
+            id__in=context['favorites'],
+            active=True
         )
         
-        # Get favorite affirmations for all tabs
-        if self.request.user.is_authenticated:
-            context['favorites'] = set(
-                FavoriteAffirmation.objects.filter(user=self.request.user)
-                .values_list('affirmation_id', flat=True)
-            )
-            context['favorite_affirmations'] = Affirmation.objects.filter(
-                id__in=context['favorites']
-            )
-        else:
-            context['favorites'] = set()
-            context['favorite_affirmations'] = Affirmation.objects.none()
-            
         return context
-    
+
     def create_default_affirmations(self, language):
         defaults = {
             'en': [
-                "I am worthy of love and respect",
-                "I am capable of achieving my goals",
-                "My challenges help me grow",
-                "I choose to focus on what I can control",
-                "I am enough just as I am",
-                "I welcome positivity into my life"
+                ("I am worthy of love and respect", "self_esteem"),
+                ("I am capable of achieving my goals", "strength"),
+                ("My challenges help me grow", "strength"),
+                ("I choose to focus on what I can control", "self_esteem"),
+                ("I am enough just as I am", "self_esteem"),
+                ("I welcome positivity into my life", "community")
             ],
             'mi': [
-                "He mea nui ahau mō te aroha me te whakaute",
-                "Ka taea e au te tutuki i aku whāinga",
-                "Ko aku wero e āwhina ana i ahau ki te tipu",
-                "Ka arohia e au ngā mea ka taea e au te whakahaere",
-                "He pai rawa atu ahau",
-                "Ka whakatau ahau i te pai ki toku oranga"
+                ("He mea nui ahau mō te aroha me te whakaute", "self_esteem"),
+                ("Ka taea e au te tutuki i aku whāinga", "strength"),
+                ("Ko aku wero e āwhina ana i ahau ki te tipu", "strength"),
+                ("Ka arohia e au ngā mea ka taea e au te whakahaere", "self_esteem"),
+                ("He pai rawa atu ahau", "self_esteem"),
+                ("Ka whakatau ahau i te pai ki toku oranga", "community")
             ]
         }
         
-        created = []
-        for text in defaults.get(language, []):
-            aff, _ = Affirmation.objects.get_or_create(
+        for text, category in defaults.get(language, []):
+            Affirmation.objects.get_or_create(
                 text=text,
                 language=language,
-                defaults={'category': 'self_esteem', 'active': True}
+                defaults={'category': category, 'active': True}
             )
-            created.append(aff)
         
-        return created
-    
+        return Affirmation.objects.filter(
+            created_by__isnull=True,
+            active=True,
+            language=language
+        )
+
     def post(self, request, *args, **kwargs):
         form = AffirmationForm(request.POST)
         if form.is_valid():
             affirmation = form.save(commit=False)
-            affirmation.language = request.LANGUAGE_CODE
-            if request.user.is_authenticated:
-                affirmation.created_by = request.user
-                affirmation.is_user_generated = True
+            affirmation.language = request.LANGUAGE_CODE or 'en'
+            affirmation.created_by = request.user
+            affirmation.is_user_generated = True
             affirmation.active = True
             affirmation.save()
             messages.success(request, _('Affirmation added successfully!'))
@@ -249,8 +245,8 @@ class DailyAffirmationsView(TemplateView):
         context['form'] = form
         return self.render_to_response(context)
 
-@method_decorator(login_required, name='dispatch')
-class FavoriteAffirmationsView(ListView):
+
+class FavoriteAffirmationsView(LoginRequiredMixin, ListView):
     template_name = 'affirmations/favorites.html'
     context_object_name = 'favorite_affirmations'
     
