@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">{% trans "My Favorite Affirmations" %}</h1>
+    
+    {% if favorites %}
+    <div class="row">
+        {% for favorite in favorites %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <p class="card-text display-6">{{ favorite.affirmation.text }}</p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        {% trans "Saved on" %} {{ favorite.saved_at|date:"SHORT_DATE_FORMAT" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        {% trans "You haven't saved any affirmations yet." %}
+    </div>
+    {% endif %}
+    
+    <a href="{% url 'affirmations' %}" class="btn btn-primary">
+        {% trans "Back to Daily Affirmations" %}
+    </a>
+</div>
+{% endblock %}

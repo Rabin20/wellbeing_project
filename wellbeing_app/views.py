@@ -2,15 +2,17 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 from .forms import MoodEntryForm, JournalEntryForm
-from .models import MoodEntry, JournalEntry
+from .models import MoodEntry, JournalEntry, Affirmation, FavoriteAffirmation
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView, ListView
 from django.utils.translation import get_language, activate
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+import random
 from .utils.translation import BulkTranslator  # Import our translation utility
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
 
 
 def home(request):
@@ -157,15 +159,39 @@ class DailyAffirmationsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['affirmations'] = [
-            _("I am worthy of love and respect"),
-            _("I am capable of achieving my goals"),
-            _("My challenges help me grow"),
-            _("I choose to focus on what I can control"),
-            _("I am enough just as I am"),
-            _("I welcome positivity into my life")
-        ]
+        current_language = self.request.LANGUAGE_CODE
+        affirmations = Affirmation.objects.filter(
+            active=True,
+            language=current_language   
+        )
+        if affirmations.count() >= 6:
+            context['affirmations'] = random.sample(list(affirmations), 6)
+        else:
+            # Fallback to a predefined list if not enough affirmations
+            context['affirmations'] = affirmations
         return context
+@login_required
+@require_POST
+def save_favorite(request):
+    affirmation_text = request.POST.get('affirmation')
+    if not affirmation_text:
+        return JsonResponse({'status': 'error'}, status=400)
+    
+    # Get or create the affirmation
+    affirmation, created = Affirmation.objects.get_or_create(text=affirmation_text)
+    
+    # Add to favorites if not already
+    fav, created = FavoriteAffirmation.objects.get_or_create(
+        user=request.user,
+        affirmation=affirmation
+    )
+    
+    return JsonResponse({'status': 'added' if created else 'already_exists'})
+
+@login_required
+def favorite_affirmations(request):
+    favorites = FavoriteAffirmation.objects.filter(user=request.user)
+    return render(request, 'affirmations/favorites.html', {'favorites': favorites})
 
 class MoodHistoryView(ListView):
     template_name = 'mood_history/mood_history.html'

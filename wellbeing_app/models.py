@@ -53,6 +53,21 @@ class Affirmation(models.Model):
     def __str__(self):
         return f"{self.text[:50]}... ({self.get_language_display()})"
 
+class FavoriteAffirmation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_('user'))
+    affirmation = models.ForeignKey(Affirmation, on_delete=models.CASCADE, verbose_name=_('affirmation'))
+    saved_at = models.DateTimeField(auto_now_add=True, verbose_name=_('saved at'))
+    notes = models.TextField(blank=True, verbose_name=_('personal notes'))
+
+    class Meta:
+        verbose_name = _('Favorite Affirmation')
+        verbose_name_plural = _('Favorite Affirmations')
+        ordering = ['-saved_at']
+        unique_together = ('user', 'affirmation')  # Prevent duplicate favorites
+    
+    def __str__(self):
+        return f"{self.user.username}'s favorite: {self.affirmation.text[:30]}..."
+
 class JournalEntry(models.Model):
     MOOD_CHOICES = MoodEntry.MOOD_CHOICES  # Reuse the same choices
     
@@ -71,6 +86,12 @@ class JournalEntry(models.Model):
         default=True,
         verbose_name=_('private entry'),
         help_text=_('Keep this entry visible only to you')
+    )
+    related_affirmations = models.ManyToManyField(
+        Affirmation,
+        blank=True,
+        verbose_name=_('related affirmations'),
+        help_text=_('Affirmations that might relate to this journal entry')
     )
 
     class Meta:

@@ -10,22 +10,33 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <p class="card-text display-6">{{ affirmation }}</p>
+                    <p class="card-text display-6">{{ affirmation.text }}</p>
+                    <small class="text-muted">{{ affirmation.get_category_display }}</small>
                 </div>
                 <div class="card-footer bg-transparent">
-                    <button class="btn btn-outline-primary w-100">
+                    <button class="btn btn-outline-primary w-100 save-btn" 
+                            data-affirmation-id="{{ affirmation.id }}">
                         {% trans "Save to favorites" %}
                     </button>
                 </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                {% trans "No affirmations available at the moment." %}
             </div>
         </div>
         {% endfor %}
     </div>
     
     <div class="text-center mt-4">
-        <button class="btn btn-primary btn-lg">
+        <a href="{% url 'affirmations' %}" class="btn btn-primary btn-lg">
             {% trans "Generate New Affirmations" %}
-        </button>
+        </a>
+        <a href="{% url 'favorite_affirmations' %}" class="btn btn-success btn-lg ms-2">
+            {% trans "View My Favorites" %}
+        </a>
     </div>
 </div>
 {% endblock %}
