@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.i18n import i18n_patterns
 from wellbeing_app import views
-from wellbeing_app.views import DailyAffirmationsView, MoodHistoryView, HelplineView, FavoriteAffirmationsView, save_affirmation
+from wellbeing_app.views import DailyAffirmationsView, HelplineView, FavoriteAffirmationsView, save_affirmation,mood_history
 
 
 # Non-translated URLs (admin and language APIs)
@@ -17,7 +17,7 @@ urlpatterns = i18n_patterns(
     path('affirmations/', DailyAffirmationsView.as_view(), name='affirmations'),
     path('affirmations/favorites/', FavoriteAffirmationsView.as_view(), name='favorite_affirmations'),
     path('affirmations/save/', save_affirmation, name='save_affirmation'),
-    path('mood-history/', MoodHistoryView.as_view(), name='mood_history'),
+    path('mood_history/',mood_history, name='mood_history'),
     path('helpline/', HelplineView.as_view(), name='helpline'),
     prefix_default_language=False
 )

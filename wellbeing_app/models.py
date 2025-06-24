@@ -38,6 +38,17 @@ class Affirmation(models.Model):
         ('culture', _('Cultural Identity')),
         ('community', _('Community')),
     ]
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='created_affirmations'
+    )
+    is_user_generated = models.BooleanField(
+        default=False,
+        verbose_name=_('user generated')
+    )
     
     text = models.CharField(max_length=200, verbose_name=_('affirmation text'))
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, verbose_name=_('language'))

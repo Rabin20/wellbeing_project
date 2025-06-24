@@ -1,6 +1,6 @@
 from django import forms
-from .models import MoodEntry
-from .models import JournalEntry
+from .models import MoodEntry,JournalEntry, Affirmation
+
 
 class MoodEntryForm(forms.ModelForm):
     class Meta:
@@ -22,4 +22,12 @@ class JournalEntryForm(forms.ModelForm):
             'tags': forms.TextInput(attrs={
                 'placeholder': 'whānau, stress, school, culture'
             })
+        }
+class AffirmationForm(forms.ModelForm):
+    class Meta:
+        model = Affirmation
+        fields = ['text', 'category']
+        widgets = {
+            'text': forms.Textarea(attrs={'rows': 3}),
+            'category': forms.Select(attrs={'class': 'form-select'})
         }

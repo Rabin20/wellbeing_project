@@ -5,13 +5,43 @@
 <div class="container mt-5">
     <h1 class="mb-4">{% trans "Daily Affirmations" %}</h1>
     
+    <!-- Add Affirmation Button -->
+    <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addAffirmationModal">
+        <i class="bi bi-plus-circle"></i> {% trans "Add Daily Affirmation" %}
+    </button>
+    
+    <!-- Affirmation Modal -->
+    <div class="modal fade" id="addAffirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans "Add New Affirmation" %}</h5>
+                    <button type="button" class="btn-close" data-bs-close="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'affirmations' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+                        <button type="submit" class="btn btn-primary">{% trans "Save Affirmation" %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Affirmations Display -->
     <div class="row" id="affirmations-container">
         {% for affirmation in affirmations %}
         <div class="col-md-6 mb-4">
             <div class="card h-100">
                 <div class="card-body text-center">
                     <p class="card-text display-6">{{ affirmation.text }}</p>
-                    <small class="text-muted">{{ affirmation.get_category_display }}</small>
+                    {% if affirmation.is_user_generated %}
+                    <span class="badge bg-info">{% trans "Your Affirmation" %}</span>
+                    {% endif %}
                 </div>
                 <div class="card-footer bg-transparent">
                     <button class="btn btn-outline-primary w-100 save-btn" 
@@ -24,7 +54,7 @@
         {% empty %}
         <div class="col-12">
             <div class="alert alert-info">
-                {% trans "No affirmations available at the moment." %}
+                {% trans "No affirmations available. Add your first one!" %}
             </div>
         </div>
         {% endfor %}
