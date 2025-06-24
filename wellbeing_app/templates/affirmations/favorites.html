@@ -12,6 +12,10 @@
             <div class="card h-100">
                 <div class="card-body text-center">
                     <p class="card-text display-6">{{ favorite.affirmation.text }}</p>
+                    <small class="text-muted">
+                        {{ favorite.affirmation.get_category_display }} •
+                        {{ favorite.affirmation.get_language_display }}
+                    </small>
                 </div>
                 <div class="card-footer bg-transparent">
                     <small class="text-muted">

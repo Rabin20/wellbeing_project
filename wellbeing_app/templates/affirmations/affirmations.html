@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">{% trans "Daily Affirmations" %}</h1>
     
-    <div class="row">
+    <div class="row" id="affirmations-container">
         {% for affirmation in affirmations %}
         <div class="col-md-6 mb-4">
             <div class="card h-100">
@@ -31,7 +31,7 @@
     </div>
     
     <div class="text-center mt-4">
-        <a href="{% url 'affirmations' %}" class="btn btn-primary btn-lg">
+        <a href="{% url 'affirmations' %}" class="btn btn-primary btn-lg" id="generate-btn">
             {% trans "Generate New Affirmations" %}
         </a>
         <a href="{% url 'favorite_affirmations' %}" class="btn btn-success btn-lg ms-2">
@@ -39,4 +39,8 @@
         </a>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/affirmations.js' %}"></script>
 {% endblock %}

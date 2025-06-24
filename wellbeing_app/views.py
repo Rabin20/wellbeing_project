@@ -12,6 +12,7 @@ import json
 import random
 from .utils.translation import BulkTranslator  # Import our translation utility
 from django.utils.translation import gettext_lazy as _
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 
 
@@ -156,40 +157,51 @@ def journal_add(request):
 
 class DailyAffirmationsView(TemplateView):
     template_name = 'affirmations/affirmations.html'
-
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current_language = self.request.LANGUAGE_CODE
-        affirmations = Affirmation.objects.filter(
+        
+        # Get all active affirmations in current language
+        all_affirmations = list(Affirmation.objects.filter(
             active=True,
-            language=current_language   
-        )
-        if affirmations.count() >= 6:
-            context['affirmations'] = random.sample(list(affirmations), 6)
+            language=current_language
+        ))
+        
+        # Select 6 random affirmations
+        if len(all_affirmations) >= 6:
+            context['affirmations'] = random.sample(all_affirmations, 6)
         else:
-            # Fallback to a predefined list if not enough affirmations
-            context['affirmations'] = affirmations
+            context['affirmations'] = all_affirmations
+            
         return context
-@login_required
+
+@method_decorator(login_required, name='dispatch')
+class FavoriteAffirmationsView(ListView):
+    template_name = 'affirmations/favorites.html'
+    model = FavoriteAffirmation
+    context_object_name = 'favorites'
+    
+    def get_queryset(self):
+        return FavoriteAffirmation.objects.filter(user=self.request.user)
+
 @require_POST
-def save_favorite(request):
-    affirmation_text = request.POST.get('affirmation')
-    if not affirmation_text:
+@login_required
+def save_affirmation(request):
+    affirmation_id = request.POST.get('affirmation_id')
+    if not affirmation_id:
         return JsonResponse({'status': 'error'}, status=400)
     
-    # Get or create the affirmation
-    affirmation, created = Affirmation.objects.get_or_create(text=affirmation_text)
-    
-    # Add to favorites if not already
-    fav, created = FavoriteAffirmation.objects.get_or_create(
-        user=request.user,
-        affirmation=affirmation
-    )
-    
-    return JsonResponse({'status': 'added' if created else 'already_exists'})
+    try:
+        affirmation = Affirmation.objects.get(id=affirmation_id)
+        fav, created = FavoriteAffirmation.objects.get_or_create(
+            user=request.user,
+            affirmation=affirmation
+        )
+        return JsonResponse({'status': 'added' if created else 'already_exists'})
+    except Affirmation.DoesNotExist:
+        return JsonResponse({'status': 'error'}, status=400)
 
-@login_required
-def favorite_affirmations(request):
     favorites = FavoriteAffirmation.objects.filter(user=request.user)
     return render(request, 'affirmations/favorites.html', {'favorites': favorites})
 
