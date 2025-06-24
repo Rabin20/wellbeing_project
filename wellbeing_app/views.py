@@ -1,68 +1,60 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
-from .forms import MoodEntryForm, JournalEntryForm
-from .models import MoodEntry, JournalEntry
+from .forms import MoodEntryForm, JournalEntryForm, AffirmationForm
+from .models import MoodEntry, JournalEntry, Affirmation, FavoriteAffirmation
 from django.contrib.auth.decorators import login_required
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, ListView
 from django.utils.translation import get_language, activate
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .utils.translation import BulkTranslator  # Import our translation utility
-from django.shortcuts import render
+import random
+from django.utils.translation import gettext_lazy as _
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
+from django.contrib import messages
+from django.db.models import Q
+from django.utils import timezone
+
+def home(request):
+    activate(get_language())
+    return render(request, 'home.html')
 
 class HomeView(TemplateView):
     template_name = 'home.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if get_language() == 'mi':
-            context.update({
-                'welcome': "Nau mai ki te Taupānga Hauora",
-                'page_title': 'Hauora Hapori',
-                'content': {
-                    'heading': 'Te tautoko i te hauora hinengaro mō ngā taiohi Māori me ngā taiohi ahurea maha',
-                    'description': 'Tō paetukutuku mō te tautoko hauora hinengaro me ngā rauemi hapori.'
-                }
-            })
-        else:
-            context.update({
-                'welcome': "Welcome to Wellbeing App",
-                'page_title': 'Community Wellbeing',
-                'content': {
-                    'heading': 'Supporting Mental Health for Māori and Multicultural Youth',
-                    'description': 'Your platform for community mental health support and resources.'
-                }
-            })
+        activate(get_language())
         return context
 
-# Translation API Views
+# Translation Views
 @csrf_exempt
 def translate_bulk(request):
-    """Handle bulk translation requests from the client"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             texts = data.get('texts', [])
             target_lang = data.get('target_lang', 'mi')
             
-            translator = BulkTranslator()
-            translations = translator.translate_bulk(texts, target_lang)
+            translations = {
+                "I am worthy of love and respect": "He mea nui ahau mō te aroha me te whakaute",
+            }
             
-            return JsonResponse({'translations': translations})
+            translated = [translations.get(text, text) for text in texts]
+            return JsonResponse({'translations': translated})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 def set_language_ajax(request):
-    """Handle language preference changes via AJAX"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             language = data.get('language', 'en')
-            activate(language)  # Activate the language immediately
+            activate(language)
             request.session['django_language'] = language
             return JsonResponse({'status': 'success'})
         except Exception as e:
@@ -94,7 +86,6 @@ def mood_tracker(request):
     else:
         form = MoodEntryForm()
     
-    # Add translation context
     context = {'form': form}
     if get_language() == 'mi':
         context['page_title'] = 'Pūrongo Āhua'
@@ -106,18 +97,16 @@ def mood_tracker(request):
 @login_required
 def mood_history(request):
     entries = MoodEntry.objects.filter(user=request.user).order_by('-date')
+    context = {
+        'entries': entries,
+        'page_title': 'Mood History',
+        'no_entries': 'No entries submitted yet'
+    }
     
-    # Add translation context
-    context = {'entries': entries}
     if get_language() == 'mi':
         context.update({
             'page_title': 'Hītori Āhua',
             'no_entries': 'Kāore he pūrongo kua tukuna'
-        })
-    else:
-        context.update({
-            'page_title': 'Mood History',
-            'no_entries': 'No entries submitted yet'
         })
     
     return render(request, 'wellbeing/mood_history.html', context)
@@ -127,7 +116,6 @@ def mood_history(request):
 def journal_list(request):
     entries = JournalEntry.objects.filter(user=request.user).order_by('-date')
     
-    # Add translation context
     context = {'entries': entries}
     if get_language() == 'mi':
         context.update({
@@ -154,7 +142,6 @@ def journal_add(request):
     else:
         form = JournalEntryForm()
     
-    # Add translation context
     context = {'form': form}
     if get_language() == 'mi':
         context['page_title'] = 'Tāpiri Tuhinga'
@@ -162,6 +149,175 @@ def journal_add(request):
         context['page_title'] = 'Add Journal Entry'
     
     return render(request, 'journal/add.html', context)
+
+# Affirmations Views
+class DailyAffirmationsView(TemplateView):
+    template_name = 'affirmations/affirmations.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = AffirmationForm()
+        current_language = self.request.LANGUAGE_CODE
+        
+        # Get all affirmations (user's and system defaults)
+        user_affirmations = Affirmation.objects.filter(
+            Q(created_by=self.request.user) | Q(created_by__isnull=True),
+            active=True,
+            language=current_language
+        )
+        
+        # Get user's personal affirmations for the "Your Affirmations" tab
+        if self.request.user.is_authenticated:
+            context['user_affirmations'] = Affirmation.objects.filter(
+                created_by=self.request.user,
+                active=True,
+                language=current_language
+            )
+        else:
+            context['user_affirmations'] = Affirmation.objects.none()
+        
+        # Create defaults if none exist
+        if not user_affirmations.exists():
+            user_affirmations = self.create_default_affirmations(current_language)
+        
+        # Select random affirmations (6 or fewer)
+        context['affirmations'] = random.sample(
+            list(user_affirmations), 
+            min(6, user_affirmations.count())
+        )
+        
+        # Get favorite affirmations for all tabs
+        if self.request.user.is_authenticated:
+            context['favorites'] = set(
+                FavoriteAffirmation.objects.filter(user=self.request.user)
+                .values_list('affirmation_id', flat=True)
+            )
+            context['favorite_affirmations'] = Affirmation.objects.filter(
+                id__in=context['favorites']
+            )
+        else:
+            context['favorites'] = set()
+            context['favorite_affirmations'] = Affirmation.objects.none()
+            
+        return context
+    
+    def create_default_affirmations(self, language):
+        defaults = {
+            'en': [
+                "I am worthy of love and respect",
+                "I am capable of achieving my goals",
+                "My challenges help me grow",
+                "I choose to focus on what I can control",
+                "I am enough just as I am",
+                "I welcome positivity into my life"
+            ],
+            'mi': [
+                "He mea nui ahau mō te aroha me te whakaute",
+                "Ka taea e au te tutuki i aku whāinga",
+                "Ko aku wero e āwhina ana i ahau ki te tipu",
+                "Ka arohia e au ngā mea ka taea e au te whakahaere",
+                "He pai rawa atu ahau",
+                "Ka whakatau ahau i te pai ki toku oranga"
+            ]
+        }
+        
+        created = []
+        for text in defaults.get(language, []):
+            aff, _ = Affirmation.objects.get_or_create(
+                text=text,
+                language=language,
+                defaults={'category': 'self_esteem', 'active': True}
+            )
+            created.append(aff)
+        
+        return created
+    
+    def post(self, request, *args, **kwargs):
+        form = AffirmationForm(request.POST)
+        if form.is_valid():
+            affirmation = form.save(commit=False)
+            affirmation.language = request.LANGUAGE_CODE
+            if request.user.is_authenticated:
+                affirmation.created_by = request.user
+                affirmation.is_user_generated = True
+            affirmation.active = True
+            affirmation.save()
+            messages.success(request, _('Affirmation added successfully!'))
+            return redirect('affirmations')
+        
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+@method_decorator(login_required, name='dispatch')
+class FavoriteAffirmationsView(ListView):
+    template_name = 'affirmations/favorites.html'
+    context_object_name = 'favorite_affirmations'
+    
+    def get_queryset(self):
+        return FavoriteAffirmation.objects.filter(
+            user=self.request.user
+        ).select_related('affirmation')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['favorites'] = set(
+            FavoriteAffirmation.objects.filter(user=self.request.user)
+            .values_list('affirmation_id', flat=True)
+        )
+        return context
+
+@require_POST
+@login_required
+def save_affirmation(request):
+    affirmation_id = request.POST.get('affirmation_id')
+    if not affirmation_id:
+        return JsonResponse({'status': 'error'}, status=400)
+    
+    try:
+        affirmation = Affirmation.objects.get(id=affirmation_id)
+        fav, created = FavoriteAffirmation.objects.get_or_create(
+            user=request.user,
+            affirmation=affirmation
+        )
+        
+        if not created:
+            fav.delete()
+            return JsonResponse({
+                'status': 'removed',
+                'message': _('Removed from favorites')
+            })
+            
+        return JsonResponse({
+            'status': 'added',
+            'message': _('Added to favorites!')
+        })
+    except Affirmation.DoesNotExist:
+        return JsonResponse({'error': _('Affirmation not found')}, status=400)
+
+class HelplineView(TemplateView):
+    template_name = 'helpline/helpline.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['helplines'] = [
+            {
+                'name': _("Lifeline Aotearoa"),
+                'number': "0800 543 354",
+                'description': _("24/7 crisis support")
+            },
+            {
+                'name': _("Youthline"),
+                'number': "0800 376 633",
+                'description': _("Support for young people")
+            },
+            {
+                'name': _("Depression Helpline"),
+                'number': "0800 111 757",
+                'description': _("Support for depression and anxiety")
+            }
+        ]
+        return context
 
 def handler404(request, exception):
     return render(request, '404.html', status=404)

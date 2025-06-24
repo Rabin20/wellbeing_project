@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">{% trans "Daily Affirmations" %}</h1>
+    
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="affirmationTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" 
+                    data-bs-target="#generate-content" type="button" role="tab">
+                {% trans "Generate Affirmations" %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="your-tab" data-bs-toggle="tab" 
+                    data-bs-target="#your-content" type="button" role="tab">
+                {% trans "Your Affirmations" %}
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="favorites-tab" data-bs-toggle="tab" 
+                    data-bs-target="#favorites-content" type="button" role="tab">
+                {% trans "View Favorites" %}
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tab Content -->
+    <div class="tab-content" id="affirmationTabContent">
+        <!-- Generate Affirmations Tab -->
+        <div class="tab-pane fade show active" id="generate-content" role="tabpanel">
+            <!-- Add Affirmation Button -->
+            <button class="btn btn-primary mb-4" data-bs-toggle="modal" data-bs-target="#addAffirmationModal">
+                <i class="bi bi-plus-circle"></i> {% trans "Add Daily Affirmation" %}
+            </button>
+            
+            <div class="row" id="affirmations-container">
+                {% for affirmation in affirmations %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <p class="card-text display-6">{{ affirmation.text }}</p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-outline-primary w-100 save-btn" 
+                                    data-affirmation-id="{{ affirmation.id }}"
+                                    data-is-favorite="{% if affirmation.id in favorites %}true{% else %}false{% endif %}">
+                                {% if affirmation.id in favorites %}
+                                <i class="bi bi-heart-fill"></i> {% trans "Saved" %}
+                                {% else %}
+                                <i class="bi bi-heart"></i> {% trans "Save to favorites" %}
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        {% trans "No affirmations available. Add your first one!" %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'affirmations' %}" class="btn btn-primary btn-lg">
+                    {% trans "Generate New Affirmations" %}
+                </a>
+            </div>
+        </div>
+        
+        <!-- Your Affirmations Tab -->
+        <div class="tab-pane fade" id="your-content" role="tabpanel">
+            <div class="row">
+                {% for affirmation in user_affirmations %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <p class="card-text display-6">{{ affirmation.text }}</p>
+                            <span class="badge bg-info">{% trans "Your Affirmation" %}</span>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-outline-primary w-100 save-btn" 
+                                    data-affirmation-id="{{ affirmation.id }}"
+                                    data-is-favorite="{% if affirmation.id in favorites %}true{% else %}false{% endif %}">
+                                {% if affirmation.id in favorites %}
+                                <i class="bi bi-heart-fill"></i> {% trans "Saved" %}
+                                {% else %}
+                                <i class="bi bi-heart"></i> {% trans "Save to favorites" %}
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        {% trans "You haven't created any affirmations yet." %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Favorites Tab -->
+        <div class="tab-pane fade" id="favorites-content" role="tabpanel">
+            <div class="row">
+                {% for fav in favorite_affirmations %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <p class="card-text display-6">{{ fav.affirmation.text }}</p>
+                            {% if fav.affirmation.created_by == request.user %}
+                            <span class="badge bg-info">{% trans "Your Affirmation" %}</span>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-outline-danger w-100 save-btn" 
+                                    data-affirmation-id="{{ fav.affirmation.id }}"
+                                    data-is-favorite="true">
+                                <i class="bi bi-heart-fill"></i> {% trans "Remove from favorites" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        {% trans "You don't have any favorite affirmations yet." %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Affirmation Modal -->
+    <div class="modal fade" id="addAffirmationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{% trans "Add New Affirmation" %}</h5>
+                    <button type="button" class="btn-close" data-bs-close="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'affirmations' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+                        <button type="submit" class="btn btn-primary">{% trans "Save Affirmation" %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle favorite button clicks
+    $('.save-btn').click(function() {
+        const btn = $(this);
+        const affirmationId = btn.data('affirmation-id');
+        const isFavorite = btn.data('is-favorite') === 'true';
+        
+        $.ajax({
+            url: '{% url "save_affirmation" %}',
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            data: {
+                'affirmation_id': affirmationId
+            },
+            success: function(data) {
+                if (data.status === 'added') {
+                    btn.html('<i class="bi bi-heart-fill"></i> {% trans "Saved" %}');
+                    btn.data('is-favorite', 'true');
+                    if (btn.hasClass('btn-outline-danger')) {
+                        btn.removeClass('btn-outline-danger').addClass('btn-outline-primary');
+                    }
+                } else if (data.status === 'removed') {
+                    btn.html('<i class="bi bi-heart"></i> {% trans "Save to favorites" %}');
+                    btn.data('is-favorite', 'false');
+                    // If on favorites tab, remove the card
+                    if ($('#favorites-tab').hasClass('active')) {
+                        btn.closest('.col-md-6').fadeOut(300, function() {
+                            $(this).remove();
+                            // Show empty message if no favorites left
+                            if ($('#favorites-content .col-md-6').length === 0) {
+                                $('#favorites-content').append(
+                                    '<div class="col-12"><div class="alert alert-info">{% trans "You don\'t have any favorite affirmations yet." %}</div></div>'
+                                );
+                            }
+                        });
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+    
+    // Refresh favorites tab when clicked
+    $('#favorites-tab').click(function() {
+        $.ajax({
+            url: '{% url "favorite_affirmations" %}',
+            method: 'GET',
+            success: function(data) {
+                $('#favorites-content').html($(data).find('#favorites-content').html());
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

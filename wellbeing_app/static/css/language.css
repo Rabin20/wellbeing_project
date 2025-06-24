@@ -17,3 +17,34 @@
     color: white;
     border-color: #0d6efd;
 }
+
+/* Resources page specific styles */
+.card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.affirmation-tabs {
+    display: flex;
+    margin-bottom: 20px;
+}
+.tab-btn {
+    padding: 10px 15px;
+    background: #f1f1f1;
+    border: none;
+    cursor: pointer;
+}
+.tab-btn.active {
+    background: #ddd;
+    font-weight: bold;
+}
+.tab-content {
+    display: none;
+}
