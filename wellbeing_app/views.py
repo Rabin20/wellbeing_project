@@ -14,6 +14,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.contrib import messages
+from django.db.models import Q
+from django.utils import timezone
 
 def home(request):
     activate(get_language())
@@ -36,10 +38,8 @@ def translate_bulk(request):
             texts = data.get('texts', [])
             target_lang = data.get('target_lang', 'mi')
             
-            # Simple translation dictionary (replace with your actual translation logic)
             translations = {
                 "I am worthy of love and respect": "He mea nui ahau mō te aroha me te whakaute",
-                # Add more translations as needed
             }
             
             translated = [translations.get(text, text) for text in texts]
@@ -93,6 +93,24 @@ def mood_tracker(request):
         context['page_title'] = 'Mood Tracker'
     
     return render(request, 'wellbeing/mood_tracker.html', context)
+
+@login_required
+def mood_history(request):
+    entries = MoodEntry.objects.filter(user=request.user).order_by('-date')
+    context = {
+        'entries': entries,
+        'page_title': 'Mood History',
+        'no_entries': 'No entries submitted yet'
+    }
+    
+    if get_language() == 'mi':
+        context.update({
+            'page_title': 'Hītori Āhua',
+            'no_entries': 'Kāore he pūrongo kua tukuna'
+        })
+    
+    return render(request, 'wellbeing/mood_history.html', context)
+
 # Journal Views
 @login_required
 def journal_list(request):
@@ -131,22 +149,6 @@ def journal_add(request):
         context['page_title'] = 'Add Journal Entry'
     
     return render(request, 'journal/add.html', context)
-@login_required
-def mood_history(request):
-    entries = MoodEntry.objects.filter(user=request.user).order_by('-date')
-    context = {
-        'entries': entries,
-        'page_title': 'Mood History',
-        'no_entries': 'No entries submitted yet'
-    }
-    
-    if get_language() == 'mi':
-        context.update({
-            'page_title': 'Hītori Āhua',
-            'no_entries': 'Kāore he pūrongo kua tukuna'
-        })
-    
-    return render(request, 'wellbeing/mood_history.html', context)
 
 # Affirmations Views
 class DailyAffirmationsView(TemplateView):
@@ -157,18 +159,45 @@ class DailyAffirmationsView(TemplateView):
         context['form'] = AffirmationForm()
         current_language = self.request.LANGUAGE_CODE
         
-        # Get all active affirmations in current language
-        all_affirmations = list(Affirmation.objects.filter(
+        # Get all affirmations (user's and system defaults)
+        user_affirmations = Affirmation.objects.filter(
+            Q(created_by=self.request.user) | Q(created_by__isnull=True),
             active=True,
             language=current_language
-        ))
+        )
         
-        # If no affirmations exist, create some defaults
-        if not all_affirmations:
-            all_affirmations = self.create_default_affirmations(current_language)
+        # Get user's personal affirmations for the "Your Affirmations" tab
+        if self.request.user.is_authenticated:
+            context['user_affirmations'] = Affirmation.objects.filter(
+                created_by=self.request.user,
+                active=True,
+                language=current_language
+            )
+        else:
+            context['user_affirmations'] = Affirmation.objects.none()
         
-        # Select 6 random affirmations
-        context['affirmations'] = random.sample(all_affirmations, min(6, len(all_affirmations)))
+        # Create defaults if none exist
+        if not user_affirmations.exists():
+            user_affirmations = self.create_default_affirmations(current_language)
+        
+        # Select random affirmations (6 or fewer)
+        context['affirmations'] = random.sample(
+            list(user_affirmations), 
+            min(6, user_affirmations.count())
+        )
+        
+        # Get favorite affirmations for all tabs
+        if self.request.user.is_authenticated:
+            context['favorites'] = set(
+                FavoriteAffirmation.objects.filter(user=self.request.user)
+                .values_list('affirmation_id', flat=True)
+            )
+            context['favorite_affirmations'] = Affirmation.objects.filter(
+                id__in=context['favorites']
+            )
+        else:
+            context['favorites'] = set()
+            context['favorite_affirmations'] = Affirmation.objects.none()
             
         return context
     
@@ -216,7 +245,6 @@ class DailyAffirmationsView(TemplateView):
             messages.success(request, _('Affirmation added successfully!'))
             return redirect('affirmations')
         
-        # If form is invalid, show errors
         context = self.get_context_data()
         context['form'] = form
         return self.render_to_response(context)
@@ -224,11 +252,20 @@ class DailyAffirmationsView(TemplateView):
 @method_decorator(login_required, name='dispatch')
 class FavoriteAffirmationsView(ListView):
     template_name = 'affirmations/favorites.html'
-    model = FavoriteAffirmation
-    context_object_name = 'favorites'
+    context_object_name = 'favorite_affirmations'
     
     def get_queryset(self):
-        return FavoriteAffirmation.objects.filter(user=self.request.user).select_related('affirmation')
+        return FavoriteAffirmation.objects.filter(
+            user=self.request.user
+        ).select_related('affirmation')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['favorites'] = set(
+            FavoriteAffirmation.objects.filter(user=self.request.user)
+            .values_list('affirmation_id', flat=True)
+        )
+        return context
 
 @require_POST
 @login_required
@@ -243,12 +280,20 @@ def save_affirmation(request):
             user=request.user,
             affirmation=affirmation
         )
+        
+        if not created:
+            fav.delete()
+            return JsonResponse({
+                'status': 'removed',
+                'message': _('Removed from favorites')
+            })
+            
         return JsonResponse({
-            'status': 'added' if created else 'already_exists',
-            'message': _('Saved to favorites!') if created else _('Already in favorites')
+            'status': 'added',
+            'message': _('Added to favorites!')
         })
     except Affirmation.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': _('Affirmation not found')}, status=400)
+        return JsonResponse({'error': _('Affirmation not found')}, status=400)
 
 class HelplineView(TemplateView):
     template_name = 'helpline/helpline.html'
@@ -273,30 +318,6 @@ class HelplineView(TemplateView):
             }
         ]
         return context
-# @login_required  
-# class MoodHistoryView(ListView):
-#     template_name = 'wellbeing/mood_history.html'
-#     model = MoodEntry
-#     context_object_name = 'entries'
-
-#     def get_queryset(self):
-#         if self.request.user.is_authenticated:
-#             return MoodEntry.objects.filter(user=self.request.user).order_by('-date')
-#         return MoodEntry.objects.none()
-
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         if get_language() == 'mi':
-#             context.update({
-#                 'page_title': 'Hītori Āhua',
-#                 'no_entries': 'Kāore he pūrongo kua tukuna'
-#             })
-#         else:
-#             context.update({
-#                 'page_title': 'Mood History',
-#                 'no_entries': 'No entries submitted yet'
-#             })
-#         return context
 
 def handler404(request, exception):
     return render(request, '404.html', status=404)

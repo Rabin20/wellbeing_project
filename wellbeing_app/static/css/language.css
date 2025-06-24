@@ -30,3 +30,21 @@
     border-left: none;
     border-right: none;
 }
+
+.affirmation-tabs {
+    display: flex;
+    margin-bottom: 20px;
+}
+.tab-btn {
+    padding: 10px 15px;
+    background: #f1f1f1;
+    border: none;
+    cursor: pointer;
+}
+.tab-btn.active {
+    background: #ddd;
+    font-weight: bold;
+}
+.tab-content {
+    display: none;
+}
