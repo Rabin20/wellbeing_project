@@ -48,3 +48,37 @@
 .tab-content {
     display: none;
 }
+
+.save-btn {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+    transform: scale(1.02);
+}
+
+/* Ensure the button isn't covered by other elements */
+.card-footer {
+    position: relative;
+    z-index: 1;
+}
+
+.affirmation-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.affirmation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.affirmation-card.selected {
+    border: 2px solid #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.clickable-affirmation {
+    padding: 1.25rem; /* Match card-body padding */
+}
