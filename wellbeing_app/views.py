@@ -132,29 +132,26 @@ class DailyAffirmationsView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['form'] = AffirmationForm()
         lang = self.request.LANGUAGE_CODE
+        user = self.request.user
+        selected_category = self.request.GET.get('category')
 
-        # All affirmations
-        all_affirmations = Affirmation.objects.filter(
-            Q(created_by=self.request.user) | Q(created_by__isnull=True),
+        base_qs = Affirmation.objects.filter(
+            Q(created_by=user) | Q(created_by__isnull=True),
             active=True,
             language=lang
         )
+        if selected_category:
+            base_qs = base_qs.filter(category=selected_category)
 
-        # Create defaults if missing
-        if not all_affirmations.exists():
-            all_affirmations = self.create_default_affirmations(lang)
+        context['affirmations'] = list(base_qs.order_by('?')[:6])
+        context['selected_category'] = selected_category
+        context['categories'] = dict(Affirmation.CATEGORY_CHOICES)
 
-        context['affirmations'] = random.sample(list(all_affirmations), min(6, all_affirmations.count()))
-
-        if self.request.user.is_authenticated:
+        if user.is_authenticated:
             context['user_affirmations'] = Affirmation.objects.filter(
-                created_by=self.request.user,
-                active=True,
-                language=lang
+                created_by=user, active=True, language=lang
             )
-            favorite_ids = FavoriteAffirmation.objects.filter(
-                user=self.request.user
-            ).values_list('affirmation_id', flat=True)
+            favorite_ids = FavoriteAffirmation.objects.filter(user=user).values_list('affirmation_id', flat=True)
             context['favorites'] = set(favorite_ids)
             context['favorite_affirmations'] = Affirmation.objects.filter(id__in=favorite_ids)
         else:
@@ -162,7 +159,6 @@ class DailyAffirmationsView(TemplateView):
             context['favorites'] = set()
             context['favorite_affirmations'] = Affirmation.objects.none()
 
-        context['all_affirmations'] = all_affirmations
         return context
 
     def create_default_affirmations(self, language):
@@ -211,16 +207,13 @@ class DailyAffirmationsView(TemplateView):
         context['form'] = form
         return self.render_to_response(context)
 
-# Favorite Affirmations View
 @method_decorator(login_required, name='dispatch')
 class FavoriteAffirmationsView(ListView):
     template_name = 'affirmations/favorites.html'
     context_object_name = 'favorite_affirmations'
 
     def get_queryset(self):
-        return FavoriteAffirmation.objects.filter(
-            user=self.request.user
-        ).select_related('affirmation')
+        return FavoriteAffirmation.objects.filter(user=self.request.user).select_related('affirmation')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -230,7 +223,6 @@ class FavoriteAffirmationsView(ListView):
         )
         return context
 
-# Save or Unsave Favorite
 @require_POST
 @login_required
 def save_affirmation(request):
@@ -251,32 +243,18 @@ def save_affirmation(request):
     except Affirmation.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': _('Affirmation not found')}, status=404)
 
-# Helpline View
 class HelplineView(TemplateView):
     template_name = 'helpline/helpline.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['helplines'] = [
-            {
-                'name': _("Lifeline Aotearoa"),
-                'number': "0800 543 354",
-                'description': _("24/7 crisis support")
-            },
-            {
-                'name': _("Youthline"),
-                'number': "0800 376 633",
-                'description': _("Support for young people")
-            },
-            {
-                'name': _("Depression Helpline"),
-                'number': "0800 111 757",
-                'description': _("Support for depression and anxiety")
-            }
+            {'name': _("Lifeline Aotearoa"), 'number': "0800 543 354", 'description': _("24/7 crisis support")},
+            {'name': _("Youthline"), 'number': "0800 376 633", 'description': _("Support for young people")},
+            {'name': _("Depression Helpline"), 'number': "0800 111 757", 'description': _("Support for depression and anxiety")}
         ]
         return context
 
-# Error Handlers
 def handler404(request, exception):
     return render(request, '404.html', status=404)
 
