@@ -70,16 +70,3 @@
 body.dashboard #main-navigation {
     display: none;
 }
-/* Badge colors for moods */
-.badge.bg-happy { background-color: #28a745; }
-.badge.bg-calm { background-color: #17a2b8; }
-.badge.bg-neutral { background-color: #6c757d; }
-.badge.bg-anxious { background-color: #ffc107; color: #212529; }
-.badge.bg-angry { background-color: #dc3545; }
-.badge.bg-sad { background-color: #6f42c1; }
-
-/* Badge colors for categories */
-.badge.bg-self_esteem { background-color: #e83e8c; }
-.badge.bg-strength { background-color: #fd7e14; }
-.badge.bg-culture { background-color: #20c997; }
-.badge.bg-community { background-color: #007bff; }
