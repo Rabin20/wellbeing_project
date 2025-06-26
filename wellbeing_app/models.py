@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
 
 
 class MoodEntry(models.Model):
@@ -18,6 +19,23 @@ class MoodEntry(models.Model):
     mood = models.CharField(max_length=20, choices=MOOD_CHOICES, verbose_name=_('mood'))
     notes = models.TextField(blank=True, verbose_name=_('notes'))
     date = models.DateTimeField(auto_now_add=True, verbose_name=_('date'))
+    
+    # Frontend properties
+    @property
+    def mood_icon(self):
+        icons = {
+            'happy': '😊',
+            'calm': '😌',
+            'neutral': '😐',
+            'anxious': '😟',
+            'angry': '😠',
+            'sad': '😢'
+        }
+        return icons.get(self.mood, '')
+    
+    @property
+    def formatted_date(self):
+        return self.date.strftime('%a %d %b %Y')
 
     class Meta:
         verbose_name = _('Mood Entry')
@@ -64,6 +82,21 @@ class Affirmation(models.Model):
         related_name='favorite_affirmations',
         verbose_name=_('favorited by')
     )
+
+    # Frontend properties
+    @property
+    def category_icon(self):
+        icons = {
+            'self_esteem': '💖',
+            'strength': '💪',
+            'culture': '🌿',
+            'community': '👥'
+        }
+        return icons.get(self.category, '🌟')
+
+    @property
+    def language_flag(self):
+        return '🇳🇿' if self.language == 'mi' else '🇬🇧'
 
     class Meta:
         verbose_name = _('Affirmation')
@@ -139,6 +172,31 @@ class JournalEntry(models.Model):
         help_text=_('Affirmations that might relate to this journal entry')
     )
 
+    # Frontend properties
+    @property
+    def mood_icon(self):
+        icons = {
+            'happy': '😊',
+            'calm': '😌',
+            'neutral': '😐',
+            'anxious': '😟',
+            'angry': '😠',
+            'sad': '😢'
+        }
+        return icons.get(self.mood, '')
+
+    @property
+    def formatted_date(self):
+        return self.date.strftime('%d %b %Y')
+
+    @property
+    def preview_content(self):
+        return self.content[:150] + '...' if len(self.content) > 150 else self.content
+
+    @property
+    def tag_list(self):
+        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+
     class Meta:
         verbose_name = _('Journal Entry')
         verbose_name_plural = _('Journal Entries')
@@ -150,9 +208,5 @@ class JournalEntry(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.title} ({self.date.strftime('%Y-%m-%d')})"
 
-    def get_tags(self):
-        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
-
     def get_absolute_url(self):
-        from django.urls import reverse
         return reverse('journal_detail', kwargs={'pk': self.pk})

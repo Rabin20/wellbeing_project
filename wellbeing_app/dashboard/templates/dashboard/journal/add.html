@@ -1,0 +1,38 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="card">
+    <div class="card-header">
+        <h2>New Journal Entry</h2>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+                {{ form.title }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.mood.id_for_label }}" class="form-label">How are you feeling?</label>
+                {{ form.mood }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.content.id_for_label }}" class="form-label">Content</label>
+                {{ form.content }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.tags.id_for_label }}" class="form-label">Tags</label>
+                {{ form.tags }}
+                <small class="text-muted">Comma separated (e.g., work, family, stress)</small>
+            </div>
+            <div class="mb-3 form-check">
+                {{ form.is_private }}
+                <label for="{{ form.is_private.id_for_label }}" class="form-check-label">Keep this entry private</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Entry</button>
+            <a href="{% url 'dashboard:journal_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

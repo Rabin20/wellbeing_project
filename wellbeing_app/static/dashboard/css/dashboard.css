@@ -1,0 +1,85 @@
+/* Dashboard Layout */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.dashboard-sidebar {
+    width: 250px;
+    background: #343a40;
+    color: white;
+    padding: 20px 0;
+    position: fixed;
+    height: 100%;
+}
+
+.dashboard-content {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid #4b545c;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li a {
+    color: #adb5bd;
+    padding: 10px 20px;
+    display: block;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.sidebar-nav li a:hover {
+    color: white;
+    background: #495057;
+}
+
+.sidebar-nav li.active a {
+    color: white;
+    background: #007bff;
+}
+
+.sidebar-nav i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Card Styles */
+.dashboard-card {
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Hide frontend menu in dashboard */
+body.dashboard #main-navigation {
+    display: none;
+}
+/* Badge colors for moods */
+.badge.bg-happy { background-color: #28a745; }
+.badge.bg-calm { background-color: #17a2b8; }
+.badge.bg-neutral { background-color: #6c757d; }
+.badge.bg-anxious { background-color: #ffc107; color: #212529; }
+.badge.bg-angry { background-color: #dc3545; }
+.badge.bg-sad { background-color: #6f42c1; }
+
+/* Badge colors for categories */
+.badge.bg-self_esteem { background-color: #e83e8c; }
+.badge.bg-strength { background-color: #fd7e14; }
+.badge.bg-culture { background-color: #20c997; }
+.badge.bg-community { background-color: #007bff; }

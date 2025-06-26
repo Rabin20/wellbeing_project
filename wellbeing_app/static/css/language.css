@@ -82,3 +82,7 @@
 .clickable-affirmation {
     padding: 1.25rem; /* Match card-body padding */
 }
+body.dashboard #main-navigation,
+body.dashboard .frontend-header {
+    display: none !important;
+}

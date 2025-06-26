@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'wellbeing_app',
+    'wellbeing_app.dashboard',
     
     # Third-party apps
     'crispy_forms',
