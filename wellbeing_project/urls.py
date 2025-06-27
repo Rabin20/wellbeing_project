@@ -3,12 +3,13 @@ from django.urls import path, include
 from django.conf.urls.i18n import i18n_patterns
 from wellbeing_app import views
 from wellbeing_app.views import DailyAffirmationsView, HelplineView, FavoriteAffirmationsView, save_affirmation,mood_history
+from wellbeing_app.admin import wellbeing_admin
 
 
 # Non-translated URLs (admin and language APIs)
 urlpatterns = i18n_patterns(
+    path('dashboard/', wellbeing_admin.urls),
     path('admin/', admin.site.urls),
-    path('dashboard/', include('wellbeing_app.dashboard.urls')),  # Dashboard app URLs
     path('', views.home, name='home'),
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),  # Django's built-in language switcher

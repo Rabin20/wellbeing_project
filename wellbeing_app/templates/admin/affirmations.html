@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+<h1>Affirmations</h1>
+<a href="{% url 'wellbeing:wellbeing_app_affirmation_add' %}" class="add-button">Add Affirmation</a>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Text</th>
+            <th>Language</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Favorites</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for affirmation in affirmations %}
+        <tr>
+            <td>{{ affirmation.text|truncatechars:50 }}</td>
+            <td>
+                {% if affirmation.language == 'mi' %}🇳🇿 Māori{% endif %}
+                {% if affirmation.language == 'en' %}🇬🇧 English{% endif %}
+            </td>
+            <td>{{ affirmation.get_category_display }}</td>
+            <td>{% if affirmation.active %}✅ Active{% else %}❌ Inactive{% endif %}</td>
+            <td>{{ affirmation.user_favorites.count }}</td>
+            <td class="action-buttons">
+                <a href="{% url 'wellbeing:wellbeing_app_affirmation_change' affirmation.id %}" style="background: #17a2b8; color: white;">Edit</a>
+                <a href="{% url 'wellbeing:wellbeing_app_affirmation_delete' affirmation.id %}" style="background: #dc3545; color: white;">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

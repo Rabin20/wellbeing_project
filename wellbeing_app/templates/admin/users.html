@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+<h1>Users</h1>
+<a href="{% url 'wellbeing:auth_user_add' %}" class="add-button">Add User</a>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Joined</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.get_full_name }}</td>
+            <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+            <td>
+                {% if user.is_active %}✅ Active{% else %}❌ Inactive{% endif %}
+                {% if user.is_staff %} | 👔 Staff{% endif %}
+            </td>
+            <td class="action-buttons">
+                <a href="{% url 'wellbeing:auth_user_change' user.id %}" style="background: #17a2b8; color: white;">Edit</a>
+                <a href="{% url 'wellbeing:auth_user_delete' user.id %}" style="background: #dc3545; color: white;">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

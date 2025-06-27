@@ -1,0 +1,68 @@
+/* Sidebar styling */
+#header { 
+    background: #2c3e50;
+    color: white;
+}
+
+.dashboard #content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#content-main {
+    float: left;
+    width: 70%;
+    padding: 20px;
+}
+
+#sidebar {
+    float: right;
+    width: 25%;
+    padding: 20px;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.module {
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.module h2 {
+    background: #3498db;
+    padding: 10px;
+    color: white;
+    margin: 0;
+    border-radius: 4px 4px 0 0;
+}
+
+.actionlist li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.actionlist li:last-child {
+    border-bottom: none;
+}
+
+/* Custom badge styles */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge.bg-primary { background-color: #007bff; }
+.badge.bg-success { background-color: #28a745; }
+.badge.bg-warning { background-color: #ffc107; color: #212529; }
+.badge.bg-info { background-color: #17a2b8; }
+.badge.bg-secondary { background-color: #6c757d; }

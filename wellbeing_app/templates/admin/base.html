@@ -1,0 +1,90 @@
+{% extends "admin/base.html" %} {% block extrastyle %} {{ block.super }}
+<style>
+  /* Sidebar styling */
+  #header {
+    background: #2c3e50;
+  }
+  #sidebar {
+    float: left;
+    width: 250px;
+    background: #f8f9fa;
+    height: 100vh;
+    padding: 20px 0;
+    border-right: 1px solid #ddd;
+  }
+  #content {
+    margin-left: 250px;
+    padding: 20px;
+  }
+  .sidebar-menu {
+    list-style: none;
+    padding: 0;
+  }
+  .sidebar-menu li a {
+    display: block;
+    padding: 10px 20px;
+    color: #333;
+    text-decoration: none;
+  }
+  .sidebar-menu li a:hover {
+    background: #e9ecef;
+  }
+  .sidebar-menu li.active a {
+    background: #007bff;
+    color: white;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table th,
+  .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  .data-table th {
+    background: #f8f9fa;
+  }
+  .action-buttons a {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border-radius: 3px;
+    text-decoration: none;
+  }
+  .add-button {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background: #28a745;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+</style>
+{% endblock %} {% block content %}
+<div id="sidebar">
+  <ul class="sidebar-menu">
+    <li
+      class="{% if request.path == '/dashboard/mood-entries/' %}active{% endif %}"
+    >
+      <a href="{% url 'wellbeing:mood_entries' %}">Mood Entries</a>
+    </li>
+    <li
+      class="{% if request.path == '/dashboard/journal-entries/' %}active{% endif %}"
+    >
+      <a href="{% url 'wellbeing:journal_entries' %}">Journal Entries</a>
+    </li>
+    <li
+      class="{% if request.path == '/dashboard/affirmations/' %}active{% endif %}"
+    >
+      <a href="{% url 'wellbeing:affirmations' %}">Affirmations</a>
+    </li>
+    <li class="{% if request.path == '/dashboard/users/' %}active{% endif %}">
+      <a href="{% url 'wellbeing:users' %}">Users</a>
+    </li>
+  </ul>
+</div>
+
+<div id="content">{% block main_content %}{% endblock %}</div>
+{% endblock %}
