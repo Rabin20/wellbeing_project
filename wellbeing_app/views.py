@@ -12,22 +12,35 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 import random
 import json
+from django.shortcuts import get_object_or_404
 
 from .forms import MoodEntryForm, JournalEntryForm, AffirmationForm
 from .models import MoodEntry, JournalEntry, Affirmation, FavoriteAffirmation
 
-# Home Page
+# Update your home view
 def home(request):
     activate(get_language())
-    return render(request, 'home.html')
-
-class HomeView(TemplateView):
-    template_name = 'home.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        activate(get_language())
-        return context
+    
+    # Journal entries for authenticated users
+    journal_entries = []
+    journal_form = None
+    
+    if request.user.is_authenticated:
+        if request.method == 'POST' and 'journal_submit' in request.POST:
+            journal_form = JournalEntryForm(request.POST, request.FILES)
+            if journal_form.is_valid():
+                entry = journal_form.save(commit=False)
+                entry.user = request.user
+                entry.save()
+                return redirect('home')
+        journal_entries = JournalEntry.objects.filter(user=request.user).order_by('-date')[:5]
+        journal_form = JournalEntryForm() if not request.method == 'POST' else journal_form
+    
+    context = {
+        'journal_entries': journal_entries,
+        'journal_form': journal_form,
+    }
+    return render(request, 'home.html', context)
 
 # User Registration
 def register(request):
@@ -94,6 +107,22 @@ def journal_add(request):
     context = {'form': form}
     context['page_title'] = _('Add Journal Entry') if get_language() == 'en' else 'Tāpiri Tuhinga'
     return render(request, 'journal/add.html', context)
+
+@require_POST
+@login_required
+def react_to_journal(request, pk):
+    entry = get_object_or_404(JournalEntry, pk=pk)
+    reaction = request.POST.get('reaction')
+    
+    if reaction == 'remove':
+        entry.remove_reaction(request.user)
+    elif reaction in dict(JournalEntry.REACTION_CHOICES).keys():
+        entry.add_reaction(request.user, reaction)
+    
+    return JsonResponse({
+        'status': 'success',
+        'reactions': entry.reactions
+    })
 
 # Translation API
 @csrf_exempt
@@ -254,6 +283,49 @@ class HelplineView(TemplateView):
             {'name': _("Depression Helpline"), 'number': "0800 111 757", 'description': _("Support for depression and anxiety")}
         ]
         return context
+# Add these new views for journal CRUD operations
+@login_required
+def journal_edit(request, pk):
+    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = JournalEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = JournalEntryForm(instance=entry)
+    
+    return render(request, 'journal/edit.html', {'form': form})
+
+@login_required
+def journal_delete(request, pk):
+    entry = get_object_or_404(JournalEntry, pk=pk, user=request.user)
+    if request.method == 'POST':
+        entry.delete()
+        return redirect('home')
+    return render(request, 'journal/confirm_delete.html', {'object': entry})
+
+# Add these new views for mood CRUD operations
+@login_required
+def mood_edit(request, pk):
+    entry = get_object_or_404(MoodEntry, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = MoodEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = MoodEntryForm(instance=entry)
+    
+    return render(request, 'mood/edit.html', {'form': form})
+
+@login_required
+def mood_delete(request, pk):
+    entry = get_object_or_404(MoodEntry, pk=pk, user=request.user)
+    if request.method == 'POST':
+        entry.delete()
+        return redirect('home')
+    return render(request, 'mood/confirm_delete.html', {'object': entry})
 
 def handler404(request, exception):
     return render(request, '404.html', status=404)

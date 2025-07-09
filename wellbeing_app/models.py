@@ -141,8 +141,6 @@ class FavoriteAffirmation(models.Model):
 
 
 class JournalEntry(models.Model):
-    MOOD_CHOICES = MoodEntry.MOOD_CHOICES  # Reuse the same mood choices
-
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -150,52 +148,67 @@ class JournalEntry(models.Model):
         verbose_name=_('user')
     )
     date = models.DateTimeField(default=timezone.now, verbose_name=_('date'))
-    mood = models.CharField(max_length=20, choices=MOOD_CHOICES, verbose_name=_('mood'))
-    title = models.CharField(max_length=100, verbose_name=_('title'))
-    content = models.TextField(verbose_name=_('content'))
-    tags = models.CharField(
-        max_length=200,
+    description = models.TextField(
+        verbose_name=_('description'),
+        blank=True,  # Allows empty string in forms
+        null=True,   # Allows NULL in database
+        help_text=_('Write your thoughts and feelings')
+    )
+    image = models.ImageField(
+        upload_to='journal_entries/%Y/%m/%d/',  # Better organized upload path
         blank=True,
-        verbose_name=_('tags'),
-        help_text=_("Comma-separated tags like 'whānau,stress,school'")
+        null=True,
+        verbose_name=_('image'),
+        help_text=_('Upload an image to accompany your journal entry')
     )
     is_private = models.BooleanField(
         default=True,
         verbose_name=_('private entry'),
         help_text=_('Keep this entry visible only to you')
     )
-    related_affirmations = models.ManyToManyField(
-        Affirmation,
-        blank=True,
-        related_name='journal_entries',
-        verbose_name=_('related affirmations'),
-        help_text=_('Affirmations that might relate to this journal entry')
-    )
+
+        # Add these at the bottom of the model
+    REACTION_CHOICES = [
+        ('like', '👍 Like'),
+        ('love', '❤️ Love'),
+        ('care', '🥰 Care'),
+        ('happy', '😊 Happy'),
+        ('sad', '😢 Sad'),
+    ]
+    
+    reactions = models.JSONField(default=dict, blank=True)  # Stores {user_id: reaction}
+
+    def add_reaction(self, user, reaction):
+        self.reactions[str(user.id)] = reaction
+        self.save()
+
+    def remove_reaction(self, user):
+        if str(user.id) in self.reactions:
+            del self.reactions[str(user.id)]
+            self.save()
+
+    def get_reaction_counts(self):
+        counts = {k: 0 for k, _ in self.REACTION_CHOICES}
+        for reaction in self.reactions.values():
+            if reaction in counts:
+                counts[reaction] += 1
+        return counts
 
     # Frontend properties
     @property
-    def mood_icon(self):
-        icons = {
-            'happy': '😊',
-            'calm': '😌',
-            'neutral': '😐',
-            'anxious': '😟',
-            'angry': '😠',
-            'sad': '😢'
-        }
-        return icons.get(self.mood, '')
-
-    @property
     def formatted_date(self):
+        """Returns date in '05 Jan 2023' format"""
         return self.date.strftime('%d %b %Y')
 
     @property
-    def preview_content(self):
-        return self.content[:150] + '...' if len(self.content) > 150 else self.content
+    def formatted_time(self):
+        """Returns time in '3:30 PM' format"""
+        return self.date.strftime('%I:%M %p')
 
     @property
-    def tag_list(self):
-        return [tag.strip() for tag in self.tags.split(',') if tag.strip()]
+    def preview_content(self):
+        """Returns truncated description for preview"""
+        return (self.description[:150] + '...') if self.description and len(self.description) > 150 else (self.description or '')
 
     class Meta:
         verbose_name = _('Journal Entry')
@@ -206,7 +219,7 @@ class JournalEntry(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.user.username}: {self.title} ({self.date.strftime('%Y-%m-%d')})"
+        return f"{self.user.username}'s journal entry - {self.formatted_date}"
 
     def get_absolute_url(self):
         return reverse('journal_detail', kwargs={'pk': self.pk})

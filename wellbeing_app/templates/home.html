@@ -3,6 +3,105 @@
 
 {% block content %}
 <div class="container mt-5">
+    <!-- Journal Entry Section (for authenticated users) -->
+    {% if user.is_authenticated %}
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto">
+            <!-- Journal Post Form -->
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans "Create Journal Entry" %}</h5>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="journal_submit" value="1">
+                        <div class="form-group">
+                            <textarea name="description" class="form-control" rows="3" 
+                                      placeholder="{% trans 'What\'s on your mind?' %}"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>{% trans "Add Image (optional)" %}</label>
+                            <input type="file" name="image" class="form-control-file" id="journal-image-upload">
+                            <small class="text-muted">{% trans "Maximum size: 5MB" %}</small>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="is_private" class="form-check-input" id="id_is_private" checked>
+                            <label class="form-check-label" for="id_is_private">
+                                {% trans "Private entry (visible only to me)" %}
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">{% trans "Post" %}</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Journal Entries Feed -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    {% trans "Your Journal Entries" %}
+                </div>
+                <div class="card-body">
+                    {% for entry in journal_entries %}
+                    <div class="card mb-3 journal-entry" data-entry-id="{{ entry.id }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">{{ entry.formatted_date }}</small>
+                                <div>
+                                    <a href="{% url 'journal_edit' entry.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'journal_delete' entry.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <p class="card-text">{{ entry.description }}</p>
+                            
+                            {% if entry.image %}
+                            <div class="text-center mt-3">
+                                <img src="{{ entry.image.url }}" 
+                                     class="img-fluid rounded" 
+                                     style="max-height: 400px; width: auto;"
+                                     alt="Journal entry image">
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Reactions Section -->
+                            <div class="reactions mt-3 border-top pt-2">
+                                <div class="btn-group reaction-buttons">
+                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="like">
+                                        👍 {% trans "Like" %}
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="love">
+                                        ❤️ {% trans "Love" %}
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="care">
+                                        🥰 {% trans "Care" %}
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="happy">
+                                        😊 {% trans "Happy" %}
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="sad">
+                                        😢 {% trans "Sad" %}
+                                    </button>
+                                </div>
+                                
+                                <div class="reaction-counts mt-2">
+                                    <!-- This would show reaction counts -->
+                                    <!-- Example: <span class="badge bg-light text-dark me-1">👍 3</span> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">{% trans "No journal entries yet. Share your thoughts!" %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Your Existing Content (Kept exactly the same) -->
     <div class="row">
         <div class="col-md-8 mx-auto text-center">
             <h1 class="display-4 mb-4">{% trans "Supporting Mental Health" %}</h1>
@@ -43,4 +142,35 @@
         </div>
     </div>
 </div>
+
+<!-- Add this JavaScript at the end of your template -->
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle reaction buttons
+    document.querySelectorAll('.react-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const entryId = this.closest('.journal-entry').dataset.entryId;
+            const reaction = this.dataset.reaction;
+            
+            fetch(`/journal/${entryId}/react/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: `reaction=${reaction}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    // Update UI to show new reactions
+                    location.reload(); // Simple refresh for demo - could be optimized
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

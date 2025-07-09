@@ -13,6 +13,14 @@ urlpatterns = i18n_patterns(
     path('', views.home, name='home'),
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),  # Django's built-in language switcher
+    # Journal CRUD
+    path('journal/edit/<int:pk>/', views.journal_edit, name='journal_edit'),
+    path('journal/delete/<int:pk>/', views.journal_delete, name='journal_delete'),
+    path('journal/<int:pk>/react/', views.react_to_journal, name='journal_react'),
+    
+    # Mood CRUD
+    path('mood/edit/<int:pk>/', views.mood_edit, name='mood_edit'),
+    path('mood/delete/<int:pk>/', views.mood_delete, name='mood_delete'),
     
     # Translation API endpoints (not language-prefixed)
     path('api/translate/', views.translate_bulk, name='translate_bulk'),
