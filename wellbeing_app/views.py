@@ -90,13 +90,35 @@ def mood_history(request):
 # Journal Views
 @login_required
 def journal_list(request):
-    entries = JournalEntry.objects.filter(user=request.user).order_by('-date')
-    context = {
-        'entries': entries,
-        'page_title': _('Journal List') if get_language() == 'en' else 'Rārangi Pukapuka',
-        'no_entries': _('No journal entries yet') if get_language() == 'en' else 'Kāore he tuhinga kua tuhia'
-    }
-    return render(request, 'journal/list.html', context)
+    filter_option = request.GET.get('filter', 'all')
+
+    if filter_option == 'mine':
+        entries = JournalEntry.objects.filter(user=request.user)
+    elif filter_option == 'public':
+        entries = JournalEntry.objects.filter(is_private=False)
+    else:  # 'all'
+        entries = JournalEntry.objects.filter(
+            Q(user=request.user) | Q(is_private=False)
+        )
+
+    entries = entries.order_by('-created_at')
+
+    # For posting new journal entry
+    if request.method == 'POST' and 'journal_submit' in request.POST:
+        form = JournalEntryForm(request.POST, request.FILES)
+        if form.is_valid():
+            journal_entry = form.save(commit=False)
+            journal_entry.user = request.user
+            journal_entry.save()
+            return redirect('journal_list')
+    else:
+        form = JournalEntryForm()
+
+    return render(request, 'journal/journal_list.html', {
+        'journal_entries': entries,
+        'form': form,
+        'filter_option': filter_option,
+    })
 
 @login_required
 def journal_add(request):
