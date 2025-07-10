@@ -379,19 +379,18 @@ def mood_edit(request, pk):
         form = MoodEntryForm(request.POST, instance=entry)
         if form.is_valid():
             form.save()
-            return redirect('home')
+            return redirect('mood_history')
     else:
         form = MoodEntryForm(instance=entry)
-    
-    return render(request, 'mood/edit.html', {'form': form})
+    return render(request, 'mood_history/edit.html', {'form': form})
 
 @login_required
 def mood_delete(request, pk):
     entry = get_object_or_404(MoodEntry, pk=pk, user=request.user)
     if request.method == 'POST':
         entry.delete()
-        return redirect('home')
-    return render(request, 'mood/confirm_delete.html', {'object': entry})
+        return redirect('mood_history')
+    return render(request, 'mood_history/confirm_delete.html', {'object': entry})
 
 def handler404(request, exception):
     return render(request, '404.html', status=404)
