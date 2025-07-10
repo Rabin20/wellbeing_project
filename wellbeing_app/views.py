@@ -75,7 +75,7 @@ def mood_tracker(request):
 
     context = {'form': form}
     context['page_title'] = _('Mood Tracker') if get_language() == 'en' else 'Pūrongo Āhua'
-    return render(request, 'wellbeing/mood_tracker.html', context)
+    return render(request, 'mood/mood_tracker.html', context)
 
 @login_required
 def mood_history(request):
@@ -85,7 +85,7 @@ def mood_history(request):
         'page_title': _('Mood History') if get_language() == 'en' else 'Hītori Āhua',
         'no_entries': _('No entries submitted yet') if get_language() == 'en' else 'Kāore he pūrongo kua tukuna'
     }
-    return render(request, 'wellbeing/mood_history.html', context)
+    return render(request, 'mood/mood_history.html', context)
 
 # Journal Views
 @login_required
@@ -382,7 +382,7 @@ def mood_edit(request, pk):
             return redirect('mood_history')
     else:
         form = MoodEntryForm(instance=entry)
-    return render(request, 'mood_history/edit.html', {'form': form})
+    return render(request, 'mood/edit.html', {'form': form})
 
 @login_required
 def mood_delete(request, pk):
@@ -390,7 +390,7 @@ def mood_delete(request, pk):
     if request.method == 'POST':
         entry.delete()
         return redirect('mood_history')
-    return render(request, 'mood_history/confirm_delete.html', {'object': entry})
+    return render(request, 'mood/confirm_delete.html', {'object': entry})
 
 def handler404(request, exception):
     return render(request, '404.html', status=404)
