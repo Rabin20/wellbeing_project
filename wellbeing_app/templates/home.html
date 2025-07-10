@@ -3,7 +3,6 @@
 
 {% block content %}
 <div class="container mt-5">
-    <!-- Journal Entry Section (for authenticated users) -->
     {% if user.is_authenticated %}
     <div class="row mb-5">
         <div class="col-md-8 mx-auto">
@@ -15,7 +14,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="journal_submit" value="1">
                         <div class="form-group">
-                            <textarea name="description" class="form-control" rows="3" 
+                            <textarea name="description" class="form-control" rows="3"
                                       placeholder="{% trans 'What\'s on your mind?' %}" required></textarea>
                         </div>
                         <div class="form-group">
@@ -60,33 +59,33 @@
                                 </div>
                             </div>
                             <p class="card-text">{{ entry.description }}</p>
-                            
+
                             {% if entry.image %}
                             <div class="text-center mt-3">
-                                <img src="{{ entry.image.url }}" 
-                                     class="img-fluid rounded shadow-sm" 
+                                <img src="{{ entry.image.url }}"
+                                     class="img-fluid rounded shadow-sm"
                                      style="max-height: 400px; width: auto; object-fit: contain;"
                                      alt="{% trans 'Journal entry image' %}">
                             </div>
                             {% endif %}
-                            
+
                             <!-- Reactions Section -->
                             <div class="reactions mt-3 border-top pt-2">
                                 <div class="btn-group reaction-buttons" role="group">
                                     <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="like">
-                                        👍 {% trans "Like" %}
+                                        👍 Like ({{ entry.reaction_counts.like|default:"0" }})
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="love">
-                                        ❤️ {% trans "Love" %}
+                                        ❤️ Love ({{ entry.reaction_counts.love|default:"0" }})
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="care">
-                                        🥰 {% trans "Care" %}
+                                        🥰 Care ({{ entry.reaction_counts.care|default:"0" }})
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="happy">
-                                        😊 {% trans "Happy" %}
+                                        😊 Happy ({{ entry.reaction_counts.happy|default:"0" }})
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="sad">
-                                        😢 {% trans "Sad" %}
+                                        😢 Sad ({{ entry.reaction_counts.sad|default:"0" }})
                                     </button>
                                 </div>
                             </div>
@@ -104,25 +103,23 @@
     </div>
     {% endif %}
 
-    <!-- Your Existing Content -->
+    <!-- Static Content -->
     <div class="row">
         <div class="col-md-8 mx-auto text-center">
             <h1 class="display-4 mb-4">{% trans "Supporting Mental Health" %}</h1>
             <h2 class="mb-4">{% trans "For Māori and Multicultural Youth" %}</h2>
-            
+
             <div class="card shadow-lg mt-5">
                 <div class="card-body">
                     <p class="lead">
                         {% trans "Our community platform provides culturally-sensitive mental health resources and support for Māori and multicultural youth." %}
                     </p>
-                    
-                    <!-- Māori welcome -->
+
                     <div class="mt-4 p-3 bg-light rounded">
                         <h3>{% trans "Nau mai, haere mai" %}</h3>
                         <p>{% trans "He waka eke noa - We're all in this together" %}</p>
                     </div>
-                    
-                    <!-- Quick Actions -->
+
                     <div class="row mt-4">
                         <div class="col-md-4 mb-3">
                             <a href="{% url 'mood_tracker' %}" class="btn btn-primary btn-block">
@@ -148,47 +145,51 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle reaction buttons
+document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.react-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const entryId = this.closest('.journal-entry').dataset.entryId;
+        button.addEventListener('click', function () {
+            const entryEl = this.closest('.journal-entry');
+            const entryId = entryEl.dataset.entryId;
             const reaction = this.dataset.reaction;
-            const button = this;
-            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
             fetch(`/journal/${entryId}/react/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': csrfToken
                 },
                 body: `reaction=${reaction}`
             })
             .then(response => response.json())
             .then(data => {
-                if(data.status === 'success') {
-                    // Toggle button active state
-                    button.classList.toggle('btn-primary');
-                    button.classList.toggle('btn-outline-secondary');
+                if (data.status === 'success') {
+                    const reactionCounts = data.counts;
+                    const userReaction = data.user_reaction;
+
+                    // Update all buttons for this entry
+                    entryEl.querySelectorAll('.react-btn').forEach(btn => {
+                        const r = btn.dataset.reaction;
+                        const count = reactionCounts[r] || 0;
+
+                        // Update button text with count
+                        const icon = btn.innerHTML.trim().split(' ')[0];  // emoji part
+                        const label = btn.innerText.replace(/([^\s]+)\s.*/, '$1');  // strip count
+                        btn.innerHTML = `${icon} ${r.charAt(0).toUpperCase() + r.slice(1)} (${count})`;
+
+                        // Toggle visual state
+                        if (r === userReaction) {
+                            btn.classList.add('btn-primary');
+                            btn.classList.remove('btn-outline-secondary');
+                        } else {
+                            btn.classList.remove('btn-primary');
+                            btn.classList.add('btn-outline-secondary');
+                        }
+                    });
                 }
             });
         });
     });
-
-    // Image upload preview
-    const imageUpload = document.getElementById('journal-image-upload');
-    if (imageUpload) {
-        imageUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file && file.type.match('image.*')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // You could show a preview here if needed
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-    }
 });
 </script>
 {% endblock %}
