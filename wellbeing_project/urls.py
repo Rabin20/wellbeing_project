@@ -17,6 +17,7 @@ urlpatterns = i18n_patterns(
     path('journal/edit/<int:pk>/', views.journal_edit, name='journal_edit'),
     path('journal/delete/<int:pk>/', views.journal_delete, name='journal_delete'),
     path('journal/<int:pk>/react/', views.react_to_journal, name='journal_react'),
+    path('upload-journal-image/', views.upload_journal_image, name='upload_journal_image'),
     
     # Mood CRUD
     path('mood/edit/<int:pk>/', views.mood_edit, name='mood_edit'),

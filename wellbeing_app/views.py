@@ -17,11 +17,10 @@ from django.shortcuts import get_object_or_404
 from .forms import MoodEntryForm, JournalEntryForm, AffirmationForm
 from .models import MoodEntry, JournalEntry, Affirmation, FavoriteAffirmation
 
-# Update your home view
+@login_required
 def home(request):
     activate(get_language())
     
-    # Journal entries for authenticated users
     journal_entries = []
     journal_form = None
     
@@ -33,8 +32,15 @@ def home(request):
                 entry.user = request.user
                 entry.save()
                 return redirect('home')
-        journal_entries = JournalEntry.objects.filter(user=request.user).order_by('-date')[:5]
-        journal_form = JournalEntryForm() if not request.method == 'POST' else journal_form
+        
+        journal_entries = JournalEntry.objects.filter(user=request.user).order_by('-date')
+        
+        # Prepare reaction data for each entry
+        for entry in journal_entries:
+            entry.reaction_counts = entry.get_reaction_counts()
+            entry.user_reaction = entry.get_user_reaction(request.user)
+        
+        journal_form = JournalEntryForm()
     
     context = {
         'journal_entries': journal_entries,
@@ -95,33 +101,57 @@ def journal_list(request):
 @login_required
 def journal_add(request):
     if request.method == 'POST':
-        form = JournalEntryForm(request.POST)
+        form = JournalEntryForm(request.POST, request.FILES)
         if form.is_valid():
             entry = form.save(commit=False)
             entry.user = request.user
             entry.save()
-            return redirect('journal_list')
+            return redirect('home')
+        else:
+            messages.error(request, _('Please correct the errors below.'))
     else:
         form = JournalEntryForm()
 
-    context = {'form': form}
-    context['page_title'] = _('Add Journal Entry') if get_language() == 'en' else 'Tāpiri Tuhinga'
-    return render(request, 'journal/add.html', context)
+    return render(request, 'journal/add.html', {
+        'form': form,
+        'page_title': _('Add Journal Entry') if get_language() == 'en' else 'Tāpiri Tuhinga'
+    })
+
+@require_POST
+@login_required
+def upload_journal_image(request):
+    if 'image' not in request.FILES:
+        return JsonResponse({'error': _('No image provided')}, status=400)
+    
+    # Validate image size and type
+    image = request.FILES['image']
+    if image.size > 5 * 1024 * 1024:  # 5MB
+        return JsonResponse({'error': _('Image too large (max 5MB)')}, status=400)
+    
+    # Process the image (save to temp location, etc.)
+    # Return URL or path for preview
+    return JsonResponse({
+        'success': True,
+        'url': '/media/temp/' + image.name  # Adjust as needed
+    })
 
 @require_POST
 @login_required
 def react_to_journal(request, pk):
     entry = get_object_or_404(JournalEntry, pk=pk)
     reaction = request.POST.get('reaction')
+    current_reaction = entry.get_user_reaction(request.user)
     
-    if reaction == 'remove':
+    # If clicking the same reaction, remove it
+    if current_reaction == reaction:
         entry.remove_reaction(request.user)
-    elif reaction in dict(JournalEntry.REACTION_CHOICES).keys():
+    else:
         entry.add_reaction(request.user, reaction)
     
     return JsonResponse({
         'status': 'success',
-        'reactions': entry.reactions
+        'counts': entry.get_reaction_counts(),
+        'user_reaction': entry.get_user_reaction(request.user)
     })
 
 # Translation API

@@ -21,13 +21,24 @@ class JournalEntryForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': _("Share your thoughts..."),
-                'rows': 3
+                'placeholder': _("What's on your mind?"),
+                'rows': 3,
+                'required': True
             }),
-            'is_private': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
+            'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control-file',
+                'accept': 'image/*'
             }),
         }
+    
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            if image.size > 5 * 1024 * 1024:  # 5MB
+                raise forms.ValidationError(_("Image too large (max 5MB)"))
+            if not image.content_type.startswith('image/'):
+                raise forms.ValidationError(_("File is not an image"))
+        return image
 
 class AffirmationForm(forms.ModelForm):
     class Meta:

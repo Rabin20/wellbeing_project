@@ -178,8 +178,10 @@ class JournalEntry(models.Model):
     
     reactions = models.JSONField(default=dict, blank=True)  # Stores {user_id: reaction}
 
-    def add_reaction(self, user, reaction):
-        self.reactions[str(user.id)] = reaction
+    def add_reaction(self, user, reaction_type):
+        if not isinstance(self.reactions, dict):
+            self.reactions = {}
+        self.reactions[str(user.id)] = reaction_type
         self.save()
 
     def remove_reaction(self, user):
@@ -193,6 +195,8 @@ class JournalEntry(models.Model):
             if reaction in counts:
                 counts[reaction] += 1
         return counts
+    def get_user_reaction(self, user):
+        return self.reactions.get(str(user.id), None)
 
     # Frontend properties
     @property
