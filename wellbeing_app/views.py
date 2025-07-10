@@ -90,23 +90,23 @@ def mood_history(request):
 # Journal Views
 @login_required
 def journal_list(request):
-    filter_type = request.GET.get('filter', 'my')
-    user = request.user
+    filter_type = request.GET.get('filter', 'my')  # Default to "my"
 
-    if filter_type == 'public':
-        entries = JournalEntry.objects.filter(is_private=False)
+    if filter_type == 'my':
+        entries = JournalEntry.objects.filter(user=request.user)
+    elif filter_type == 'public':
+        entries = JournalEntry.objects.filter(is_private=False).exclude(user=request.user)
     elif filter_type == 'all':
-        entries = JournalEntry.objects.filter(
-            models.Q(user=user) | models.Q(is_private=False)
-        ).distinct()
-    else:  # 'my' or fallback
-        entries = JournalEntry.objects.filter(user=user)
+        entries = JournalEntry.objects.filter(is_private=False) | JournalEntry.objects.filter(user=request.user)
+    else:
+        entries = JournalEntry.objects.none()
 
-    context = {
+    entries = entries.order_by('-date')
+
+    return render(request, 'journal/journal_list.html', {
         'journal_entries': entries,
-        'filter_type': filter_type
-    }
-    return render(request, 'journal_list.html', context)
+        'filter_type': filter_type,
+    })
 
 
 @login_required

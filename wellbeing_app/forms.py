@@ -1,6 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from .models import MoodEntry, JournalEntry, Affirmation
+from django.core.files.uploadedfile import UploadedFile
 
 class MoodEntryForm(forms.ModelForm):
     class Meta:
@@ -31,14 +32,18 @@ class JournalEntryForm(forms.ModelForm):
             }),
         }
     
-    def clean_image(self):
-        image = self.cleaned_data.get('image')
-        if image:
-            if image.size > 5 * 1024 * 1024:  # 5MB
-                raise forms.ValidationError(_("Image too large (max 5MB)"))
-            if not image.content_type.startswith('image/'):
-                raise forms.ValidationError(_("File is not an image"))
-        return image
+def clean_image(self):
+    image = self.cleaned_data.get('image')
+
+    if image and isinstance(image, UploadedFile):
+        # Only do content_type check for new uploads
+        if image.size > 5 * 1024 * 1024:  # Limit size to 5MB
+            raise forms.ValidationError(_('Image file too large (max 5MB).'))
+
+        if image.content_type not in ['image/jpeg', 'image/png', 'image/gif']:
+            raise forms.ValidationError(_('Invalid image format. Please upload JPG, PNG, or GIF.'))
+
+    return image
 
 class AffirmationForm(forms.ModelForm):
     class Meta:
