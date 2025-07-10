@@ -50,6 +50,8 @@ urlpatterns += i18n_patterns(
     # Affirmations
     path('affirmations/', DailyAffirmationsView.as_view(), name='affirmations'),
     path('affirmations/favorites/', FavoriteAffirmationsView.as_view(), name='favorite_affirmations'),
+    path('affirmations/edit/<int:pk>/', views.affirmation_edit, name='affirmation_edit'),
+    path('affirmations/delete/<int:pk>/', views.affirmation_delete, name='affirmation_delete'),
     path('affirmations/save/', save_affirmation, name='save_affirmation'),
 
     # Helpline

@@ -1,40 +1,112 @@
 {% extends 'base.html' %}
+{% load static i18n %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <h2 class="mb-4">Your Mental Health Journal</h2>
-            <a href="{% url 'journal_add' %}" class="btn btn-primary mb-4">
-                + New Entry
-            </a>
+<div class="container mt-5">
+    <h1 class="mb-4">{% trans "Journal Entries" %}</h1>
 
-            {% for entry in entries %}
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span class="badge bg-{% if entry.mood == 'happy' %}success{% elif entry.mood == 'sad' %}primary{% else %}warning{% endif %}">
-                        {{ entry.get_mood_display }}
-                    </span>
-                    <small class="text-muted">{{ entry.date|date:"F j, Y" }}</small>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">{{ entry.title }}</h5>
-                    <p class="card-text">{{ entry.content|linebreaks }}</p>
-                    {% if entry.tags %}
-                    <div class="mt-2">
-                        {% for tag in entry.tags.split %}
-                        <span class="badge bg-secondary me-1">{{ tag }}</span>
-                        {% endfor %}
-                    </div>
+    <!-- Filter Dropdown -->
+<form method="get" class="mb-4 d-flex gap-2 align-items-center">
+    <label for="filter" class="form-label mb-0">{% trans "Show:" %}</label>
+    <select name="filter" id="filter" class="form-select w-auto" onchange="this.form.submit()">
+        <option value="my" {% if filter_type == "my" %}selected{% endif %}>{% trans "My Entries" %}</option>
+        <option value="public" {% if filter_type == "public" %}selected{% endif %}>{% trans "Public Entries" %}</option>
+        <option value="all" {% if filter_type == "all" %}selected{% endif %}>{% trans "All Entries" %}</option>
+    </select>
+</form>
+
+
+    <!-- Entries -->
+    {% for entry in journal_entries %}
+    <div class="card mb-4 journal-entry" data-entry-id="{{ entry.id }}">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>{{ entry.user.username }}</strong>
+                    <small class="text-muted">• {{ entry.formatted_date }}</small>
+                    {% if entry.is_private %}
+                        <i class="fas fa-lock ms-2" title="{% trans 'Private' %}"></i>
                     {% endif %}
                 </div>
+                {% if entry.user == user %}
+                <div>
+                    <a href="{% url 'journal_edit' entry.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'journal_delete' entry.id %}" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+                {% endif %}
             </div>
-            {% empty %}
-            <div class="alert alert-info">
-                No journal entries yet. Start writing to reflect on your mental health journey.
+
+            <p>{{ entry.description }}</p>
+
+            {% if entry.image %}
+            <div class="text-center">
+                <img src="{{ entry.image.url }}" class="img-fluid rounded shadow-sm" style="max-height: 400px; object-fit: contain;" alt="Journal Image">
             </div>
-            {% endfor %}
+            {% endif %}
+
+            <!-- Reactions -->
+            <div class="reactions mt-3 border-top pt-2">
+                <div class="btn-group reaction-buttons" role="group">
+                    {% for key, label in entry.REACTION_CHOICES %}
+                    <button type="button" class="btn btn-sm {% if entry.get_user_reaction(user) == key %}btn-primary{% else %}btn-outline-secondary{% endif %} react-btn" data-reaction="{{ key }}">
+                        {{ label.split|first }} {{ label.split|last }} ({{ entry.get_reaction_counts.key|default:0 }})
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
+    {% empty %}
+    <div class="alert alert-info text-center">{% trans "No journal entries to show." %}</div>
+    {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.react-btn').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const entryDiv = this.closest('.journal-entry');
+            const entryId = entryDiv.dataset.entryId;
+            const reaction = this.dataset.reaction;
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+
+            fetch(`/journal/${entryId}/react/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `reaction=${reaction}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const buttons = entryDiv.querySelectorAll('.react-btn');
+                    buttons.forEach(btn => {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-outline-secondary');
+                    });
+
+                    if (data.active) {
+                        const btn = entryDiv.querySelector(`.react-btn[data-reaction="${reaction}"]`);
+                        if (btn) {
+                            btn.classList.remove('btn-outline-secondary');
+                            btn.classList.add('btn-primary');
+                        }
+                    }
+
+                    // Optionally update count text if needed
+                    // (e.g., refresh counts without page reload)
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _, get_language, activate
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.decorators import method_decorator
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q
 import random
 import json
@@ -90,35 +90,24 @@ def mood_history(request):
 # Journal Views
 @login_required
 def journal_list(request):
-    filter_option = request.GET.get('filter', 'all')
+    filter_type = request.GET.get('filter', 'my')
+    user = request.user
 
-    if filter_option == 'mine':
-        entries = JournalEntry.objects.filter(user=request.user)
-    elif filter_option == 'public':
+    if filter_type == 'public':
         entries = JournalEntry.objects.filter(is_private=False)
-    else:  # 'all'
+    elif filter_type == 'all':
         entries = JournalEntry.objects.filter(
-            Q(user=request.user) | Q(is_private=False)
-        )
+            models.Q(user=user) | models.Q(is_private=False)
+        ).distinct()
+    else:  # 'my' or fallback
+        entries = JournalEntry.objects.filter(user=user)
 
-    entries = entries.order_by('-created_at')
-
-    # For posting new journal entry
-    if request.method == 'POST' and 'journal_submit' in request.POST:
-        form = JournalEntryForm(request.POST, request.FILES)
-        if form.is_valid():
-            journal_entry = form.save(commit=False)
-            journal_entry.user = request.user
-            journal_entry.save()
-            return redirect('journal_list')
-    else:
-        form = JournalEntryForm()
-
-    return render(request, 'journal/journal_list.html', {
+    context = {
         'journal_entries': entries,
-        'form': form,
-        'filter_option': filter_option,
-    })
+        'filter_type': filter_type
+    }
+    return render(request, 'journal_list.html', context)
+
 
 @login_required
 def journal_add(request):
@@ -287,7 +276,32 @@ class DailyAffirmationsView(TemplateView):
         context = self.get_context_data()
         context['form'] = form
         return self.render_to_response(context)
+def staff_check(user):
+    return user.is_staff
 
+@user_passes_test(staff_check)
+@login_required
+def affirmation_edit(request, pk):
+    affirmation = get_object_or_404(Affirmation, pk=pk)
+    if request.method == 'POST':
+        form = AffirmationForm(request.POST, instance=affirmation)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('Affirmation updated successfully!'))
+            return redirect('affirmations')
+    else:
+        form = AffirmationForm(instance=affirmation)
+    return render(request, 'affirmations/edit_affirmation.html', {'form': form})
+
+@user_passes_test(staff_check)
+@login_required
+def affirmation_delete(request, pk):
+    affirmation = get_object_or_404(Affirmation, pk=pk)
+    if request.method == 'POST':
+        affirmation.delete()
+        messages.success(request, _('Affirmation deleted.'))
+        return redirect('affirmations')
+    return render(request, 'affirmations/confirm_delete.html', {'object': affirmation})
 @method_decorator(login_required, name='dispatch')
 class FavoriteAffirmationsView(ListView):
     template_name = 'affirmations/favorites.html'
