@@ -61,6 +61,20 @@
     border-radius: 0.25rem;
 }
 
+    table.data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    table.data-table th, table.data-table td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+    .action-buttons a {
+        margin-right: 6px;
+        text-decoration: none;
+    }
+
 .badge.bg-primary { background-color: #007bff; }
 .badge.bg-success { background-color: #28a745; }
 .badge.bg-warning { background-color: #ffc107; color: #212529; }
