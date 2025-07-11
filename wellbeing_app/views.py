@@ -20,8 +20,8 @@ from .models import MoodEntry, JournalEntry, Affirmation, FavoriteAffirmation
 @login_required
 def home(request):
     activate(get_language())
-    journal_entries = []
-
+    
+    # Handle journal form submission
     if request.method == 'POST' and 'journal_submit' in request.POST:
         journal_form = JournalEntryForm(request.POST, request.FILES)
         if journal_form.is_valid():
@@ -32,10 +32,19 @@ def home(request):
     else:
         journal_form = JournalEntryForm()
 
-    journal_entries = JournalEntry.objects.filter(
-        Q(is_private=False) | Q(user=request.user)
-    ).order_by('-date')
+    # Determine filter type from query string
+    filter_type = request.GET.get('filter', 'my')  # default to 'my'
+    
+    if filter_type == 'all':
+        journal_entries = JournalEntry.objects.filter(
+            Q(user=request.user) | Q(is_private=False)
+        ).order_by('-date')
+    else:
+        journal_entries = JournalEntry.objects.filter(
+            user=request.user
+        ).order_by('-date')
 
+    # Add reactions and user-specific data
     for entry in journal_entries:
         entry.reaction_counts = entry.get_reaction_counts()
         entry.user_reaction = entry.get_user_reaction(request.user)
@@ -43,6 +52,7 @@ def home(request):
     context = {
         'journal_entries': journal_entries,
         'journal_form': journal_form,
+        'filter_type': filter_type,
     }
     return render(request, 'home.html', context)
 

@@ -5,152 +5,149 @@
 <div class="container mt-5">
     {% if user.is_authenticated %}
     <div class="row mb-5">
-        <div class="col-md-8 mx-auto">
+        <div class="col-lg-8 col-md-10 mx-auto">
             <!-- Journal Post Form -->
-            <div class="card shadow mb-4">
+            <div class="card shadow-sm mb-4 border-0">
                 <div class="card-body">
-                    <h5 class="card-title">{% trans "Create Journal Entry" %}</h5>
+                    <h5 class="card-title mb-3">{% trans "Create Journal Entry" %}</h5>
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <input type="hidden" name="journal_submit" value="1">
-                        <div class="form-group">
-                            <textarea name="description" class="form-control" rows="3"
-                                      placeholder="{% trans 'What\'s on your mind?' %}" required></textarea>
+                        
+                        <div class="form-group mb-3">
+                            <textarea name="description" class="form-control" rows="3" placeholder="{% trans 'What\'s on your mind?' %}" required></textarea>
                         </div>
-                        <div class="form-group">
-                            <label>{% trans "Add Image (optional)" %}</label>
-                            <input type="file" name="image" class="form-control-file" id="journal-image-upload" accept="image/*">
+                        
+                        <div class="form-group mb-3">
+                            <label class="form-label">{% trans "Add Image (optional)" %}</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
                             <small class="text-muted">{% trans "Maximum size: 5MB (JPEG, PNG)" %}</small>
                         </div>
+                        
                         <div class="form-check mb-3">
                             <input type="checkbox" name="is_private" class="form-check-input" id="id_is_private" checked>
                             <label class="form-check-label" for="id_is_private">
-                                <i class="fas fa-lock"></i> {% trans "Private entry (visible only to me)" %}
+                                <i class="fas fa-lock me-1"></i> {% trans "Private entry (visible only to me)" %}
                             </label>
                         </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> {% trans "Post" %}
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-paper-plane me-1"></i> {% trans "Post" %}
                         </button>
                     </form>
                 </div>
             </div>
 
+            <!-- Filter Buttons -->
+            <div class="d-flex justify-content-end mb-3">
+                <a href="?filter=my" class="btn me-2 {% if filter_type == 'my' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {% trans "Your Posts" %}
+                </a>
+                <a href="?filter=all" class="btn {% if filter_type == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {% trans "All Posts" %}
+                </a>
+            </div>
+
             <!-- Journal Entries Feed -->
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <i class="fas fa-book-open"></i> {% trans "Your Journal Entries" %}
-                </div>
+            {% for entry in journal_entries %}
+            <div class="card mb-4 border-0 shadow-sm journal-entry" data-entry-id="{{ entry.id }}">
                 <div class="card-body">
-                    {% for entry in journal_entries %}
-                    <div class="card mb-3 journal-entry" data-entry-id="{{ entry.id }}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <small class="text-muted">
-                                    <i class="far fa-clock"></i> {{ entry.formatted_date }}
-                                    {% if entry.is_private %}<i class="fas fa-lock ml-2"></i>{% endif %}
-                                </small>
-                                <div>
-                                    <a href="{% url 'journal_edit' entry.id %}" class="btn btn-sm btn-outline-primary" title="{% trans 'Edit' %}">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'journal_delete' entry.id %}" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <p class="card-text">{{ entry.description }}</p>
-
-                            {% if entry.image %}
-                            <div class="text-center mt-3">
-                                <img src="{{ entry.image.url }}"
-                                     class="img-fluid rounded shadow-sm"
-                                     style="max-height: 400px; width: auto; object-fit: contain;"
-                                     alt="{% trans 'Journal entry image' %}">
-                            </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong>{{ entry.user.username }}</strong>
+                            <small class="text-muted ms-2"><i class="far fa-clock"></i> {{ entry.formatted_date }}</small>
+                            {% if entry.is_private %}
+                                <i class="fas fa-lock ms-2 text-muted" title="{% trans 'Private' %}"></i>
                             {% endif %}
+                        </div>
+                        {% if entry.user == user %}
+                        <div>
+                            <a href="{% url 'journal_edit' entry.id %}" class="btn btn-sm btn-outline-primary me-1" title="{% trans 'Edit' %}">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'journal_delete' entry.id %}" class="btn btn-sm btn-outline-danger" title="{% trans 'Delete' %}">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
 
-                            <!-- Reactions Section -->
-                            <div class="reactions mt-3 border-top pt-2">
-                                <div class="btn-group reaction-buttons" role="group">
-                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="like">
-                                        👍 Like ({{ entry.reaction_counts.like|default:"0" }})
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="love">
-                                        ❤️ Love ({{ entry.reaction_counts.love|default:"0" }})
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="care">
-                                        🥰 Care ({{ entry.reaction_counts.care|default:"0" }})
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="happy">
-                                        😊 Happy ({{ entry.reaction_counts.happy|default:"0" }})
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary react-btn" data-reaction="sad">
-                                        😢 Sad ({{ entry.reaction_counts.sad|default:"0" }})
-                                    </button>
-                                </div>
-                            </div>
+                    <p class="card-text">{{ entry.description }}</p>
+
+                    {% if entry.image %}
+                    <div class="text-center my-3">
+                        <img src="{{ entry.image.url }}" class="img-fluid rounded shadow-sm" style="max-height: 400px; object-fit: contain;" alt="{% trans 'Journal entry image' %}">
+                    </div>
+                    {% endif %}
+
+                    <!-- Reactions -->
+                    <div class="reactions mt-3 pt-2 border-top">
+                        <div class="btn-group reaction-buttons" role="group">
+                            {% for key, label in entry.REACTION_CHOICES %}
+                            <button class="btn btn-sm {% if entry.user_reaction == key %}btn-primary{% else %}btn-outline-secondary{% endif %} react-btn" data-reaction="{{ key }}">
+                                {{ label }} ({{ entry.reaction_counts.key|default:0 }})
+                            </button>
+                            {% endfor %}
                         </div>
                     </div>
-                    {% empty %}
-                    <div class="text-center py-4">
-                        <i class="far fa-comment-dots fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">{% trans "No journal entries yet. Share your thoughts!" %}</p>
-                    </div>
-                    {% endfor %}
                 </div>
             </div>
+            {% empty %}
+            <div class="text-center py-4">
+                <i class="far fa-comment-dots fa-3x text-muted mb-3"></i>
+                <p class="text-muted">{% trans "No journal entries yet. Share your thoughts!" %}</p>
+            </div>
+            {% endfor %}
         </div>
     </div>
     {% endif %}
 
-    <!-- Static Content -->
-    <div class="row">
-        <div class="col-md-8 mx-auto text-center">
-            <h1 class="display-4 mb-4">{% trans "Supporting Mental Health" %}</h1>
-            <h2 class="mb-4">{% trans "For Māori and Multicultural Youth" %}</h2>
+    <!-- Static Info Section -->
+    <div class="row mt-5">
+        <div class="col-lg-8 col-md-10 mx-auto text-center">
+            <h1 class="display-5 mb-3">{% trans "Supporting Mental Health" %}</h1>
+            <h4 class="text-muted mb-4">{% trans "For Māori and Multicultural Youth" %}</h4>
 
-            <div class="card shadow-lg mt-5">
-                <div class="card-body">
-                    <p class="lead">
-                        {% trans "Our community platform provides culturally-sensitive mental health resources and support for Māori and multicultural youth." %}
-                    </p>
+            <div class="card border-0 shadow-lg p-4">
+                <p class="lead">
+                    {% trans "Our community platform provides culturally-sensitive mental health resources and support for Māori and multicultural youth." %}
+                </p>
+                <div class="mt-3 p-3 bg-light rounded">
+                    <h5>{% trans "Nau mai, haere mai" %}</h5>
+                    <p>{% trans "He waka eke noa - We're all in this together" %}</p>
+                </div>
 
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <h3>{% trans "Nau mai, haere mai" %}</h3>
-                        <p>{% trans "He waka eke noa - We're all in this together" %}</p>
+                <div class="row mt-4">
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'mood_tracker' %}" class="btn btn-outline-primary w-100">
+                            <i class="far fa-smile"></i> {% trans "Track Your Mood" %}
+                        </a>
                     </div>
-
-                    <div class="row mt-4">
-                        <div class="col-md-4 mb-3">
-                            <a href="{% url 'mood_tracker' %}" class="btn btn-primary btn-block">
-                                <i class="far fa-smile"></i> {% trans "Track Your Mood" %}
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-info btn-block">
-                                <i class="fas fa-users"></i> {% trans "Community Resources" %}
-                            </a>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <a href="#" class="btn btn-success btn-block">
-                                <i class="fas fa-phone-alt"></i> {% trans "Helpline Access" %}
-                            </a>
-                        </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="#" class="btn btn-outline-info w-100">
+                            <i class="fas fa-users"></i> {% trans "Community Resources" %}
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="#" class="btn btn-outline-success w-100">
+                            <i class="fas fa-phone-alt"></i> {% trans "Helpline Access" %}
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.react-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const entryEl = this.closest('.journal-entry');
-            const entryId = entryEl.dataset.entryId;
-            const reaction = this.dataset.reaction;
+        button.addEventListener('click', () => {
+            const entry = button.closest('.journal-entry');
+            const entryId = entry.dataset.entryId;
+            const reaction = button.dataset.reaction;
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch(`/journal/${entryId}/react/`, {
@@ -161,30 +158,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: `reaction=${reaction}`
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const reactionCounts = data.counts;
-                    const userReaction = data.user_reaction;
-
-                    // Update all buttons for this entry
-                    entryEl.querySelectorAll('.react-btn').forEach(btn => {
+                    entry.querySelectorAll('.react-btn').forEach(btn => {
                         const r = btn.dataset.reaction;
-                        const count = reactionCounts[r] || 0;
+                        const count = data.counts[r] || 0;
+                        btn.textContent = `${r.charAt(0).toUpperCase() + r.slice(1)} (${count})`;
 
-                        // Update button text with count
-                        const icon = btn.innerHTML.trim().split(' ')[0];  // emoji part
-                        const label = btn.innerText.replace(/([^\s]+)\s.*/, '$1');  // strip count
-                        btn.innerHTML = `${icon} ${r.charAt(0).toUpperCase() + r.slice(1)} (${count})`;
-
-                        // Toggle visual state
-                        if (r === userReaction) {
-                            btn.classList.add('btn-primary');
-                            btn.classList.remove('btn-outline-secondary');
-                        } else {
-                            btn.classList.remove('btn-primary');
-                            btn.classList.add('btn-outline-secondary');
-                        }
+                        btn.classList.remove('btn-primary', 'btn-outline-secondary');
+                        btn.classList.add(data.user_reaction === r ? 'btn-primary' : 'btn-outline-secondary');
                     });
                 }
             });
@@ -192,5 +175,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-{% endblock %}
 {% endblock %}
