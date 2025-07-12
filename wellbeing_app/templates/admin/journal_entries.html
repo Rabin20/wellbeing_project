@@ -1,0 +1,54 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+<h1>Journal Entries</h1>
+
+<a href="{% url 'wellbeing:wellbeing_app_journalentry_add' %}" class="add-button">Add Journal Entry</a>
+
+{% if journal_entries %}
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Mood</th>
+            <th>Privacy</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in journal_entries %}
+        <tr>
+            <td>{{ entry.user.username }}</td>
+            <td>{{ entry.title|truncatechars:30 }}</td>
+            <td>{{ entry.date }}</td>
+            <td>
+                {% if entry.mood == 'happy' %}😊{% endif %}
+                {% if entry.mood == 'calm' %}😌{% endif %}
+                {% if entry.mood == 'neutral' %}😐{% endif %}
+                {% if entry.mood == 'anxious' %}😟{% endif %}
+                {% if entry.mood == 'angry' %}😠{% endif %}
+                {% if entry.mood == 'sad' %}😢{% endif %}
+                {{ entry.get_mood_display }}
+            </td>
+            <td>
+                {% if entry.is_private %}
+                    <span title="Private">🔒</span>
+                {% else %}
+                    <span title="Public">🔓</span>
+                {% endif %}
+            </td>
+            <td class="action-buttons">
+                <a href="{% url 'wellbeing:wellbeing_app_journalentry_change' entry.id %}" style="background: #17a2b8; color: white; padding: 4px 10px; border-radius: 4px;">Edit</a>
+                <a href="{% url 'wellbeing:wellbeing_app_journalentry_delete' entry.id %}" style="background: #dc3545; color: white; padding: 4px 10px; border-radius: 4px;">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>No journal entries found.</p>
+{% endif %}
+
+{% endblock %}

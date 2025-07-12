@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h2>Recent Activity</h2>
+        <h3>Mood Entries</h3>
+        <ul>
+            {% for mood in recent_moods %}
+            <li>{{ mood.user }} - {{ mood.mood_display }} ({{ mood.date }})</li>
+            {% endfor %}
+        </ul>
+        
+        <h3>Journal Entries</h3>
+        <ul>
+            {% for journal in recent_journals %}
+            <li>{{ journal.user }} - {{ journal.title }} ({{ journal.date }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div id="sidebar">
+    <div class="module">
+        <h2>Quick Actions</h2>
+        <ul class="actionlist">
+            <li><a href="{% url 'wellbeing:wellbeing_app_moodentry_add' %}">Add Mood Entry</a></li>
+            <li><a href="{% url 'wellbeing:wellbeing_app_journalentry_add' %}">Add Journal Entry</a></li>
+            <li><a href="{% url 'wellbeing:wellbeing_app_affirmation_add' %}">Add Affirmation</a></li>
+            <li><a href="{% url 'wellbeing:auth_user_add' %}">Add User</a></li>
+        </ul>
+    </div>
+    
+    <div class="module">
+        <h2>Recent Users</h2>
+        <ul>
+            {% for user in recent_users %}
+            <li>{{ user.username }} ({{ user.date_joined|date }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

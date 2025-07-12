@@ -48,3 +48,65 @@
 .tab-content {
     display: none;
 }
+
+.save-btn {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+    transform: scale(1.02);
+}
+
+/* Ensure the button isn't covered by other elements */
+.card-footer {
+    position: relative;
+    z-index: 1;
+}
+
+.affirmation-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.affirmation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.affirmation-card.selected {
+    border: 2px solid #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.clickable-affirmation {
+    padding: 1.25rem; /* Match card-body padding */
+}
+body.dashboard #main-navigation,
+body.dashboard .frontend-header {
+    display: none !important;
+}
+
+/* Journal entry images */
+.journal-entry img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Reaction buttons */
+.reaction-buttons {
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.reaction-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.reaction-counts .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}

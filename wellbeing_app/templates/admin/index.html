@@ -1,0 +1,41 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <h3>Users</h3>
+            <p>Total: {{ stats.users.total }}</p>
+            <p>Active: {{ stats.users.active }}</p>
+            <p>New this week: {{ stats.users.new_week }}</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Mood Tracking</h3>
+            <p>Total entries: {{ stats.mood.total }}</p>
+            <p>This week: {{ stats.mood.week }}</p>
+            <p>Recent entries:</p>
+            <ul>
+                {% for entry in stats.mood.recent %}
+                <li>{{ entry.user }} - {{ entry.get_mood_display }} ({{ entry.date }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Journal</h3>
+            <p>Total entries: {{ stats.journal.total }}</p>
+            <p>This week: {{ stats.journal.week }}</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Affirmations</h3>
+            <p>Total: {{ stats.affirmations.total }}</p>
+            <p>Active: {{ stats.affirmations.active }}</p>
+            <p>Favorites: {{ stats.affirmations.favorites }}</p>
+        </div>
+    </div>
+    
+    {{ block.super }}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+<h1>Mood Entries</h1>
+<a href="{% url 'wellbeing:wellbeing_app_moodentry_add' %}" class="add-button">Add Mood Entry</a>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Mood</th>
+            <th>Date</th>
+            <th>Notes</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in mood_entries %}
+        <tr>
+            <td>{{ entry.user }}</td>
+            <td>{{ entry.mood_display }}</td>
+            <td>{{ entry.date }}</td>
+            <td>{{ entry.notes_short }}</td>
+            <td class="action-buttons">
+                <a href="{% url 'wellbeing:wellbeing_app_moodentry_change' entry.id %}" style="background: #17a2b8; color: white;">Edit</a>
+                <a href="{% url 'wellbeing:wellbeing_app_moodentry_delete' entry.id %}" style="background: #dc3545; color: white;">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
