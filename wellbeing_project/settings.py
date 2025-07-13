@@ -84,6 +84,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+"https://wellbeing-project.onrender.com",
+]
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 # Internationalization
 LANGUAGE_CODE = 'en'  # Default language
 TIME_ZONE = 'Pacific/Auckland'
