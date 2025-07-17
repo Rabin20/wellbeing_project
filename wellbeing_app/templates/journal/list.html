@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static i18n %}
+{% load static i18n dict_extras %}
 
 {% block content %}
 <div class="container mt-5">
@@ -52,7 +52,7 @@
                 <div class="btn-group reaction-buttons" role="group">
                     {% for key, label in entry.REACTION_CHOICES %}
                     <button type="button" class="btn btn-sm {% if entry.get_user_reaction(user) == key %}btn-primary{% else %}btn-outline-secondary{% endif %} react-btn" data-reaction="{{ key }}">
-                        {{ label.split|first }} {{ label.split|last }} ({{ entry.get_reaction_counts.key|default:0 }})
+                        {{ label.split|first }} {{ label.split|last }} ({{ entry.reaction_counts:key|default:0 }})
                     </button>
                     {% endfor %}
                 </div>
@@ -88,20 +88,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.status === 'success') {
                     const buttons = entryDiv.querySelectorAll('.react-btn');
                     buttons.forEach(btn => {
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-outline-secondary');
+                        const r = btn.dataset.reaction;
+                        const count = data.counts[r] || 0;
+                        btn.textContent = `${r.charAt(0).toUpperCase() + r.slice(1)} (${count})`;
+                        btn.classList.remove('btn-primary', 'btn-outline-secondary');
+                        btn.classList.add(data.user_reaction === r ? 'btn-primary' : 'btn-outline-secondary');
                     });
-
-                    if (data.active) {
-                        const btn = entryDiv.querySelector(`.react-btn[data-reaction="${reaction}"]`);
-                        if (btn) {
-                            btn.classList.remove('btn-outline-secondary');
-                            btn.classList.add('btn-primary');
-                        }
-                    }
-
-                    // Optionally update count text if needed
-                    // (e.g., refresh counts without page reload)
                 }
             });
         });

@@ -115,6 +115,11 @@ def journal_list(request):
         entries = JournalEntry.objects.none()
 
     entries = entries.order_by('-date')
+    
+    for entry in entries:
+        entry.reaction_counts = entry.get_reaction_counts()
+        entry.user_reaction = entry.get_user_reaction(request.user)
+
     return render(request, 'journal/list.html', {
         'journal_entries': entries,
         'filter_type': filter_type,
