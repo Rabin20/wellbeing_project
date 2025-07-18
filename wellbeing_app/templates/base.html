@@ -133,16 +133,18 @@
                         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
                     });
                     
-                    // Submit the form via AJAX
-                    fetch(this.action, {
+                    // Submit the form via AJAX to update the session language
+                    fetch('{% url "set_language_ajax" %}', {
                         method: 'POST',
-                        body: formData,
+                        body: JSON.stringify({
+                            language: formData.get('language')
+                        }),
                         headers: {
+                            'Content-Type': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
                             'X-CSRFToken': formData.get('csrfmiddlewaretoken')
                         }
-                    })
-                    .then(response => {
+                    }).then(response => {
                         if (response.ok) {
                             window.location.reload();
                         }
@@ -166,16 +168,15 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const form = this.closest('form');
-            const formData = new FormData(form);
-            formData.append('language', this.value);  // include the chosen language
-            
-            // Submit form via AJAX
-            fetch(form.action, {
+            const csrftoken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+            // Submit chosen language via API
+            fetch('{% url "set_language_ajax" %}', {
                 method: 'POST',
-                body: formData,
+                body: JSON.stringify({ language: this.value }),
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                    'X-CSRFToken': csrftoken
                 }
             }).then(() => {
                 window.location.reload();  // Reload to see changes
