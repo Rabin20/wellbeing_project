@@ -124,7 +124,8 @@
             languageForms.forEach(form => {
                 form.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    const formData = new FormData(this);
+                    const form = this;
+                    const formData = new FormData(form);
                     
                     // Show loading state
                     const buttons = this.querySelectorAll('button');
@@ -146,7 +147,14 @@
                         }
                     }).then(response => {
                         if (response.ok) {
-                            window.location.reload();
+                            const nextUrl = form.querySelector('[name=next]').value || window.location.pathname + window.location.search;
+                            let redirect = nextUrl.replace(/^\/mi(?=\/)/, '/');
+                            if (formData.get('language') === 'mi') {
+                                if (!redirect.startsWith('/mi/')) {
+                                    redirect = '/mi' + (redirect.startsWith('/') ? '' : '/') + redirect;
+                                }
+                            }
+                            window.location.href = redirect;
                         }
                     })
                     .catch(error => {
@@ -179,7 +187,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-CSRFToken': csrftoken
                 }
             }).then(() => {
-                window.location.reload();  // Reload to see changes
+                const nextUrl = form.querySelector('[name=next]').value || window.location.pathname + window.location.search;
+                let redirect = nextUrl.replace(/^\/mi(?=\/)/, '/');
+                if (this.value === 'mi') {
+                    if (!redirect.startsWith('/mi/')) {
+                        redirect = '/mi' + redirect;
+                    }
+                }
+                window.location.href = redirect;
             });
         });
     });
