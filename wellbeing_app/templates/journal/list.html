@@ -52,7 +52,7 @@
                 <div class="btn-group reaction-buttons" role="group">
                     {% for key, label in entry.REACTION_CHOICES %}
                     <button type="button" class="btn btn-sm {% if entry.get_user_reaction(user) == key %}btn-primary{% else %}btn-outline-secondary{% endif %} react-btn" data-reaction="{{ key }}">
-                        {{ label.split|first }} {{ label.split|last }} ({{ entry.reaction_counts:key|default:0 }})
+                        {{ label.split|first }} {{ label.split|last }} ({{ entry.reaction_counts|get_item:key|default:0 }})
                     </button>
                     {% endfor %}
                 </div>

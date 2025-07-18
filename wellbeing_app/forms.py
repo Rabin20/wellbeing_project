@@ -32,17 +32,18 @@ class JournalEntryForm(forms.ModelForm):
             }),
         }
     
-def clean_image(self):
-    image = self.cleaned_data.get('image')
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
 
-    if image and isinstance(image, UploadedFile):
-        # Only do content_type check for new uploads
-        if image.size > 5 * 1024 * 1024:  # Limit size to 5MB
-            raise forms.ValidationError(_('Image file too large (max 5MB).'))
+        if image and isinstance(image, UploadedFile):
+            # Only do content_type check for new uploads
+            if image.size > 5 * 1024 * 1024:  # Limit size to 5MB
+                raise forms.ValidationError(_('Image file too large (max 5MB).'))
+                
+            if image.content_type not in ['image/jpeg', 'image/png', 'image/gif']:
+                raise forms.ValidationError(_('Invalid image format. Please upload JPG, PNG, or GIF.'))
 
-        if image.content_type not in ['image/jpeg', 'image/png', 'image/gif']:
-            raise forms.ValidationError(_('Invalid image format. Please upload JPG, PNG, or GIF.'))
-
+        return image
     return image
 
 class AffirmationForm(forms.ModelForm):
